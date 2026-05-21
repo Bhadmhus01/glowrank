@@ -20,12 +20,13 @@ Opus likely pushes women's-with-makeup reports past the §5 ceiling.
   launch. Do NOT silently downgrade the model (§8).
 - **Status:** open. **Blocks:** launch cost sign-off (not code).
 
-## M3 — Orchestrator must honor Call 1's fail-closed contract
-`runSafetyPrecheck` throws on unparseable/invalid output and must never be treated as
-`PASS`. The orchestrator (still a stub) must route a thrown Call 1 to non-delivery /
-manual review. Do NOT wrap it in a `try/catch` that defaults to PASS (CLAUDE.md §2 rule 3).
-- **Resolve:** enforce and test when the orchestrator is built.
-- **Status:** open. **Blocks:** orchestrator integration.
+## M3 — Orchestrator must honor the fail-closed contracts (ADDRESSED)
+`runSafetyPrecheck` (Call 1) and `runSafetyFilter` (Call 5) throw on unparseable/invalid
+output and must never be treated as `PASS`/deliver.
+- **Status:** ADDRESSED in `src/chain/orchestrator.ts` — a thrown Call 1 or Call 5, an
+  exhausted regenerate loop, and a deterministic banned-term hit all resolve to
+  non-delivery (`hard_fail`). Covered by orchestrator tests. Keep this invariant if the
+  orchestrator is refactored.
 
 ## M4 — Build the photo storage + image-processor adapters
 `src/photos/storage.ts` defines `StorageClient` and `ImageProcessor` seams but no concrete
@@ -42,3 +43,15 @@ adapters. Two are needed before photo handling works end to end:
 - Deps deferred because they can't be installed/verified on the current dev machine
   (no Node toolchain present).
 - **Status:** open. **Blocks:** real photo upload + actual 30-day deletion in prod.
+
+## M5 — Modified-report variants for ED / MEDICAL / AGING flags
+Call 1 can return `FLAG_ED`, `FLAG_MEDICAL`, `FLAG_AGING`, which Trust_Safety §2.2/§2.3/§2.4
+route to a *modified* report (ED → omit body-composition + ED resources; MEDICAL → no skin
+advice + dermatologist referral; AGING → reframe tone, no anti-aging language). Call 4's
+prompt is the STANDARD report only — there is no approved modified variant, and serving a
+standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
+- **Interim (built):** the orchestrator returns `status: 'held'` for these flags — it does
+  NOT generate a standard report. They need manual handling / a resource path.
+- **Resolve:** design modified Call 4 modes (new prompt work → founder sign-off), plus the
+  resource pages and the held-user flow.
+- **Status:** open. **Blocks:** automated handling of ED/MEDICAL/AGING users.
