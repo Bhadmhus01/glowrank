@@ -11,7 +11,29 @@ export type SafetyAction =
   | 'MODIFIED_MEDICAL' //  FLAG_MEDICAL → modified report, dermatologist referral
   | 'WEDDING_WAITLIST' //  FLAG_WEDDING → kind waitlist page, refund
 
-/** Maps a Call 1 classification to its required downstream action. */
+/**
+ * Maps a Call 1 classification to its required downstream action. Severity is already
+ * resolved inside Call 1 (CRISIS > BDD > ED > AGING > MEDICAL > AGE > WEDDING), so this
+ * is a pure 1:1 map. Exhaustive over SafetyClassification — adding a new flag without a
+ * branch is a compile error.
+ */
 export function routeSafetyClassification(c: SafetyClassification): SafetyAction {
-  throw new Error('NOT_IMPLEMENTED: safety routing')
+  switch (c) {
+    case 'PASS':
+      return 'CONTINUE'
+    case 'FLAG_AGE':
+      return 'REFUSE_AGE'
+    case 'FLAG_CRISIS':
+      return 'CRISIS_RESOURCES'
+    case 'FLAG_BDD':
+      return 'BDD_RESOURCES'
+    case 'FLAG_ED':
+      return 'MODIFIED_ED'
+    case 'FLAG_AGING':
+      return 'MODIFIED_AGING'
+    case 'FLAG_MEDICAL':
+      return 'MODIFIED_MEDICAL'
+    case 'FLAG_WEDDING':
+      return 'WEDDING_WAITLIST'
+  }
 }
