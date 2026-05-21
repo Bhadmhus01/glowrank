@@ -1,0 +1,25 @@
+{
+  "name": "glowrank",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GlowRank Phase 1 backend — AI glow-up report orchestration (see CLAUDE.md).",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "stripe": "^17.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@vercel/node": "^3.2.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  }
+}
