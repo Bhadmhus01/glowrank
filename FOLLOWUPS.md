@@ -55,3 +55,22 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - **Resolve:** design modified Call 4 modes (new prompt work → founder sign-off), plus the
   resource pages and the held-user flow.
 - **Status:** open. **Blocks:** automated handling of ED/MEDICAL/AGING users.
+
+## M6 — Fulfillment execution layer + API handlers
+`src/fulfillment/plan.ts` decides the post-generation actions; nothing executes them yet,
+and the API handlers (`api/intake.ts`, `api/stripe-webhook.ts`, `api/generate.ts`,
+`api/report/[id].ts`) are still 501 stubs. To make the flow real:
+1. **Order loading / storage fetch** — load intake + photo keys for an order; fetch
+   processed photo bytes → `AnalysisImage[]` (depends on M4 storage adapter).
+2. **Stripe** — verify webhook signature on payment_success; issue refunds (`plan.refund`).
+   Touches payments — confirm with founder before wiring (CLAUDE.md §7).
+3. **Email** — send `plan.email` using copy VERBATIM from `docs/Landing_Copy.md`; never
+   invent it (CLAUDE.md §2 rule 2). Needs the delivery + each resource/refusal email copy.
+4. **Delivery** — render PDF (M4 image lib adjacent), store the report for its shareable
+   URL, serve it from `api/report/[id]`.
+5. **Side effects** — immediate photo delete (`plan.deletePhotosImmediately`), email flag,
+   manual-review queue, analytics events.
+- **Open product questions flagged during the plan:** (a) should refused CRISIS/BDD/WEDDING
+  users have photos deleted immediately or follow the 30-day TTL? (b) what comms a `held`
+  (ED/MEDICAL/AGING) user receives.
+- **Status:** open. **Blocks:** any real end-to-end run.
