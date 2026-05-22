@@ -1,0 +1,19 @@
+{
+  "intake": {
+    "age": 26,
+    "gender": "man",
+    "goal": "dating",
+    "budgetTier": "100-300",
+    "heightCm": 178,
+    "bodyType": "athletic",
+    "stylePreferences": ["smart-casual", "classic"],
+    "makeupOptin": false,
+    "email": "you@example.com",
+    "freeText": ""
+  },
+  "photos": [
+    { "category": "face-front", "path": "./test-photos/front.jpg" },
+    { "category": "face-side", "path": "./test-photos/side.jpg" },
+    { "category": "full-body", "path": "./test-photos/body.jpg" }
+  ]
+}
