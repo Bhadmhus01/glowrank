@@ -55,10 +55,15 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - **Status:** open. **Blocks:** automated handling of ED/MEDICAL/AGING users.
 
 ## M6 — Fulfillment execution layer + API handlers
-`src/fulfillment/plan.ts` decides the post-generation actions. **Done so far:** Stripe
-webhook **signature verification + event routing** (`src/payments/stripe.ts`,
-`api/stripe-webhook.ts`) — verifies the signature and, on a PAID checkout, yields a
-`generate` action with the order reference. It does NOT yet trigger generation or refund.
+`src/fulfillment/plan.ts` decides the post-generation actions. **Done so far:**
+- Stripe webhook signature verification + event routing (`src/payments/stripe.ts`,
+  `api/stripe-webhook.ts`) — on a PAID checkout, yields a `generate` action with the order
+  ref. Does NOT yet trigger generation or refund.
+- Account-less **order store** (`src/orders/order-store.ts`) — intake + photo refs as JSON
+  at `orders/{id}.json` via a shared `BlobStore` (`src/storage/blob-store.ts`).
+- **Report hosting** — `src/reports/report-store.ts` + `src/reports/render-html.ts`
+  (marked → noindex HTML) + `api/report/[id].ts` (validates id, serves report, 404 if
+  missing). The write side (saving a delivered report) is wired when the generate flow lands.
 
 **Decisions needed from the founder before the rest:**
 - **Email copy gap (blocker):** only the report-delivery email exists (Landing_Copy §8.1).
