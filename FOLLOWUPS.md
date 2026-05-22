@@ -55,9 +55,24 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - **Status:** open. **Blocks:** automated handling of ED/MEDICAL/AGING users.
 
 ## M6 — Fulfillment execution layer + API handlers
-`src/fulfillment/plan.ts` decides the post-generation actions; nothing executes them yet,
-and the API handlers (`api/intake.ts`, `api/stripe-webhook.ts`, `api/generate.ts`,
-`api/report/[id].ts`) are still 501 stubs. To make the flow real:
+`src/fulfillment/plan.ts` decides the post-generation actions. **Done so far:** Stripe
+webhook **signature verification + event routing** (`src/payments/stripe.ts`,
+`api/stripe-webhook.ts`) — verifies the signature and, on a PAID checkout, yields a
+`generate` action with the order reference. It does NOT yet trigger generation or refund.
+
+**Decisions needed from the founder before the rest:**
+- **Email copy gap (blocker):** only the report-delivery email exists (Landing_Copy §8.1).
+  The crisis / BDD / wedding-waitlist / hard-fail-apology emails are NOT written anywhere —
+  needed before the email layer can be built (CLAUDE.md §2 rule 2 forbids inventing them).
+- **Email provider:** Resend or Postmark (§4).
+- **PDF:** Puppeteer or PDFShift (§4) — Puppeteer needs a serverless Chromium on Vercel.
+- **Analytics provider:** Plausible or PostHog (§4).
+- **Order linking / store:** how a Checkout Session maps to the stored intake + photo keys
+  (proposal: store the order in object storage keyed by an order id; set it as the
+  Session's `client_reference_id`). Account-less (CLAUDE.md §4).
+- **Refund execution:** explicit go-ahead to write code that issues Stripe refunds (§7).
+
+**Remaining build (after the above):**
 1. **Order loading / storage fetch** — load intake + photo keys for an order; fetch
    processed photo bytes → `AnalysisImage[]` (depends on M4 storage adapter).
 2. **Stripe** — verify webhook signature on payment_success; issue refunds (`plan.refund`).
