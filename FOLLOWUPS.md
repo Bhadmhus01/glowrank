@@ -28,21 +28,19 @@ output and must never be treated as `PASS`/deliver.
   non-delivery (`hard_fail`). Covered by orchestrator tests. Keep this invariant if the
   orchestrator is refactored.
 
-## M4 — Build the photo storage + image-processor adapters
-`src/photos/storage.ts` defines `StorageClient` and `ImageProcessor` seams but no concrete
-adapters. Two are needed before photo handling works end to end:
-1. **S3-compatible `StorageClient`** (`@aws-sdk/client-s3`) targeting R2 or S3 via env
-   (`PHOTO_BUCKET`, `PHOTO_STORAGE_ENDPOINT`, keys). `list()` should surface each object's
-   upload time (metadata or LastModified) for the TTL sweep.
-2. **`ImageProcessor`** that strips EXIF and converts **HEIC/HEIF → JPEG** — Anthropic's
-   vision API does not accept HEIC, so this conversion is required, not optional.
-   `sharp` is the usual choice but its HEIC path is platform-finicky on serverless; verify
-   on the target runtime (may need `heic-convert` or a lifecycle step).
-- Then wire both into `/api/cron/delete-photos` (currently auths then returns 501) and the
-  intake handler. Also recommended: a bucket lifecycle rule as belt-and-suspenders.
-- Deps deferred because they can't be installed/verified on the current dev machine
-  (no Node toolchain present).
-- **Status:** open. **Blocks:** real photo upload + actual 30-day deletion in prod.
+## M4 — Photo storage + image-processor adapters (MOSTLY ADDRESSED)
+- **`ImageProcessor`** — built: `src/photos/image-processor.ts` (sharp 0.34.5 / libvips
+  8.17.3). Re-encodes to JPEG (strips EXIF; converts HEIC/HEIF → JPEG). **HEIF input
+  support confirmed** on this machine, so no `heic-convert` needed. Verify it also holds on
+  the deploy runtime (Vercel) — sharp's HEIF support is platform-dependent.
+- **`StorageClient`** — built: `src/photos/s3-storage.ts` (S3-compatible, R2 or S3 via env;
+  `list()` uses object `LastModified` as upload time for the TTL sweep).
+- **Deletion cron** — `/api/cron/delete-photos` now authorizes then actually runs
+  `deleteExpiredPhotos`. **Requires the `PHOTO_*` env vars** + a bucket; 500s (not silent
+  no-op) if unconfigured. Recommended: also set a bucket lifecycle rule as belt-and-suspenders.
+- **Still open (rolls into M6):** wiring upload in `api/intake.ts` (validate → strip → store)
+  and a `get(key)` fetch path so the generate flow can hand processed bytes to Call 2.
+- **Status:** core adapters done + deletion live. Remaining bits tracked under M6.
 
 ## M5 — Modified-report variants for ED / MEDICAL / AGING flags
 Call 1 can return `FLAG_ED`, `FLAG_MEDICAL`, `FLAG_AGING`, which Trust_Safety §2.2/§2.3/§2.4
