@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "report": "tsx scripts/run-report.ts"
+    "report": "tsx scripts/run-report.ts",
+    "list-reviews": "tsx scripts/list-reviews.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
