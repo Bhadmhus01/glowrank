@@ -30,6 +30,12 @@ export interface PutObjectParams {
 /** Storage seam. Implemented by an S3-compatible adapter that targets either R2 or S3. */
 export interface StorageClient {
   put(params: PutObjectParams): Promise<void>
+  /**
+   * Fetches the PROCESSED (already EXIF-stripped, JPEG/PNG) bytes for a stored key. Used by
+   * the generate flow to hand photo bytes to Call 2. Throws if the object is missing or its
+   * stored content type is not vision-API-safe.
+   */
+  get(key: string): Promise<ProcessedImage>
   delete(key: string): Promise<void>
   /** Lists stored objects with their upload time (e.g. from object metadata / LastModified). */
   list(): Promise<StorageObject[]>

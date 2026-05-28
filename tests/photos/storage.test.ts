@@ -13,6 +13,9 @@ function makeDeps() {
     put: async (p) => {
       puts.push(p)
     },
+    get: async () => {
+      throw new Error('not used in storePhoto tests')
+    },
     delete: async (k) => {
       deletes.push(k)
     },

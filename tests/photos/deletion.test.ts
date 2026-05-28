@@ -25,6 +25,9 @@ function fakeStorage(objects: StorageObject[]) {
   const deleted: string[] = []
   const storage: StorageClient = {
     put: async () => {},
+    get: async () => {
+      throw new Error('not used in deletion tests')
+    },
     delete: async (key) => {
       deleted.push(key)
     },
