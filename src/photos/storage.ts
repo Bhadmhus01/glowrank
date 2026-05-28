@@ -1,6 +1,12 @@
+import { randomUUID } from 'node:crypto'
+import { validatePhoto } from './validation'
+
 // Photo handling rules are non-negotiable (CLAUDE.md §2 rule 4, PRD §5.3):
 // EXIF stripped on upload; 30-day TTL deletion; never used for training; never shared.
-// Accepted: JPG/PNG/HEIC, ≤10MB/photo, ≤12 photos.
+//
+// The actual R2/S3 client and the EXIF-stripping/HEIC-conversion image processor are
+// injected as dependencies so this module stays pure and fully testable. Their concrete
+// adapters (@aws-sdk/client-s3, sharp) are deferred — see FOLLOWUPS.md (M4).
 
 export interface StoredPhoto {
   /** Opaque storage key — safe to log; raw bytes are not. */
@@ -8,20 +14,83 @@ export interface StoredPhoto {
   uploadedAt: string // ISO 8601
 }
 
-export const MAX_PHOTO_BYTES = 10 * 1024 * 1024
-export const MAX_PHOTOS = 12
-
-/** Removes all EXIF/metadata from an image buffer before storage. */
-export function stripExif(image: Uint8Array): Uint8Array {
-  throw new Error('NOT_IMPLEMENTED: EXIF stripping')
+/** A stored object as returned by a listing — used by the deletion sweep. */
+export interface StorageObject {
+  key: string
+  uploadedAt: Date
 }
 
-/** Strips EXIF and stores the image in R2/S3 with a 30-day TTL. */
-export async function storePhoto(image: Uint8Array, contentType: string): Promise<StoredPhoto> {
-  throw new Error('NOT_IMPLEMENTED: photo storage (R2/S3, 30-day TTL)')
+export interface PutObjectParams {
+  key: string
+  bytes: Uint8Array
+  contentType: string
+  uploadedAt: Date
 }
 
-/** Immediate deletion — used for the under-18 hard gate (photos deleted at once). */
-export async function deletePhoto(key: string): Promise<void> {
-  throw new Error('NOT_IMPLEMENTED: photo deletion')
+/** Storage seam. Implemented by an S3-compatible adapter that targets either R2 or S3. */
+export interface StorageClient {
+  put(params: PutObjectParams): Promise<void>
+  /**
+   * Fetches the PROCESSED (already EXIF-stripped, JPEG/PNG) bytes for a stored key. Used by
+   * the generate flow to hand photo bytes to Call 2. Throws if the object is missing or its
+   * stored content type is not vision-API-safe.
+   */
+  get(key: string): Promise<ProcessedImage>
+  delete(key: string): Promise<void>
+  /** Lists stored objects with their upload time (e.g. from object metadata / LastModified). */
+  list(): Promise<StorageObject[]>
+}
+
+/** A processed image: metadata-stripped and in a vision-API-safe format. */
+export interface ProcessedImage {
+  bytes: Uint8Array
+  contentType: 'image/jpeg' | 'image/png'
+}
+
+/** Image-processing seam. */
+export interface ImageProcessor {
+  /**
+   * Strips ALL metadata (EXIF) and normalizes the format. HEIC/HEIF must be converted
+   * to JPEG here — Anthropic's vision API does not accept HEIC (see FOLLOWUPS.md M4).
+   */
+  stripAndNormalize(bytes: Uint8Array, contentType: string): Promise<ProcessedImage>
+}
+
+export interface PhotoDeps {
+  storage: StorageClient
+  processor: ImageProcessor
+  /** Injectable for tests; defaults to the system clock. */
+  now?: () => Date
+  /** Injectable for tests; defaults to a random UUID. */
+  randomId?: () => string
+}
+
+/**
+ * Validates, strips EXIF / normalizes format, then stores the PROCESSED bytes (never the
+ * originals — the originals carry EXIF). Throws `PHOTO_REJECTED: <reason>` on invalid input
+ * before any storage call is made.
+ */
+export async function storePhoto(
+  deps: PhotoDeps,
+  bytes: Uint8Array,
+  contentType: string,
+): Promise<StoredPhoto> {
+  const error = validatePhoto(bytes, contentType)
+  if (error !== null) {
+    throw new Error(`PHOTO_REJECTED: ${error}`)
+  }
+
+  const processed = await deps.processor.stripAndNormalize(bytes, contentType)
+  const now = (deps.now ?? (() => new Date()))()
+  const id = (deps.randomId ?? randomUUID)()
+  const ext = processed.contentType === 'image/png' ? 'png' : 'jpg'
+  const key = `photos/${now.toISOString().slice(0, 10)}/${id}.${ext}`
+
+  await deps.storage.put({ key, bytes: processed.bytes, contentType: processed.contentType, uploadedAt: now })
+  return { key, uploadedAt: now.toISOString() }
+}
+
+/** Immediate deletion of a single object — used by the under-18 hard gate. */
+export async function deletePhoto(storage: StorageClient, key: string): Promise<void> {
+  await storage.delete(key)
 }

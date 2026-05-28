@@ -11,6 +11,12 @@ dist/
 .env.*
 !.env.example
 
+# Local report-harness inputs (may contain personal photos / data)
+report-input.json
+report-input.*.json
+!report-input.example.json
+/test-photos/
+
 # Test / coverage
 coverage/
 

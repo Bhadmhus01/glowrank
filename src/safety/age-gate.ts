@@ -5,7 +5,12 @@
  */
 export const MINIMUM_AGE = 18
 
-/** Returns true only if the user is verifiably 18 or older. */
+/**
+ * Returns true only if the user is verifiably 18 or older. Deterministic — this gate
+ * runs on the intake `age` field BEFORE payment, independent of any model output.
+ * Call 1's FLAG_AGE is a separate backstop for under-18 signals in free-text.
+ * Rejects non-integers, NaN, and negative/zero ages.
+ */
 export function isAgeEligible(age: number): boolean {
-  throw new Error('NOT_IMPLEMENTED: age gate')
+  return Number.isInteger(age) && age >= MINIMUM_AGE
 }
