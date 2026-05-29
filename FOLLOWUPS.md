@@ -4,14 +4,11 @@ Deferred risks and open decisions surfaced during the build. Resolve each before
 relevant code path goes live. The product/safety docs in `/docs` remain source of truth;
 this file is engineering tracking only.
 
-## M1 — Verify Anthropic model aliases before any real (non-mocked) call
-`src/chain/models.ts` uses `claude-haiku-4-5`, `claude-sonnet-4-6`, `claude-opus-4-7`.
-CLAUDE.md §5 says use the latest alias and avoid dated pins, but the only confirmed
-Haiku identifier is dated (`claude-haiku-4-5-20251001`). If a bare alias does not
-resolve, the request fails at runtime — and mocked tests will not catch it.
-- **Resolve:** confirm each alias against Anthropic's current model list; decide alias
-  vs. dated pin with the founder (this is the §5 tension).
-- **Status:** open. **Blocks:** first real chain call.
+## M1 — Verify Anthropic model aliases before any real (non-mocked) call (DONE)
+- `claude-sonnet-4-6` and `claude-opus-4-7` bare aliases confirmed valid.
+- `claude-haiku-4-5` bare alias not confirmed — updated to dated pin
+  `claude-haiku-4-5-20251001` (the only known valid Haiku 4.5 ID).
+- **Status:** DONE.
 
 ## M2 — Opus-on-Call-4 vs the $1.20/report budget
 CLAUDE.md §5 assigns Opus to Call 4; `Prompt_Chain.md`'s cost table assumes Sonnet.
@@ -77,18 +74,27 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
   Session's `client_reference_id`). Account-less (CLAUDE.md §4).
 - **Refund execution:** explicit go-ahead to write code that issues Stripe refunds (§7).
 
-**Remaining build (after the above):**
-1. **Order loading / storage fetch** — load intake + photo keys for an order; fetch
-   processed photo bytes → `AnalysisImage[]` (depends on M4 storage adapter).
-2. **Stripe** — verify webhook signature on payment_success; issue refunds (`plan.refund`).
-   Touches payments — confirm with founder before wiring (CLAUDE.md §7).
-3. **Email** — send `plan.email` using copy VERBATIM from `docs/Landing_Copy.md`; never
-   invent it (CLAUDE.md §2 rule 2). Needs the delivery + each resource/refusal email copy.
-4. **Delivery** — render PDF (M4 image lib adjacent), store the report for its shareable
-   URL, serve it from `api/report/[id]`.
-5. **Side effects** — immediate photo delete (`plan.deletePhotosImmediately`), email flag,
-   manual-review queue, analytics events.
-- **Open product questions flagged during the plan:** (a) should refused CRISIS/BDD/WEDDING
-  users have photos deleted immediately or follow the 30-day TTL? (b) what comms a `held`
-  (ED/MEDICAL/AGING) user receives.
-- **Status:** open. **Blocks:** any real end-to-end run.
+**Build status — all M6 items complete:**
+- `src/fulfillment/run.ts` — spine built; all seams wired (email, refund, queue, flag, analytics).
+- `api/generate.ts` — auth-gated internal trigger; wires all deps; BlockedSeamError → 503.
+- `api/stripe-webhook.ts` — verifies signature, routes event, fires generate, returns 200.
+- `api/intake.ts` — multipart parse, age gate, flagged-email check, photo store, order create.
+- `src/analytics/events.ts` — PostHog, serverless-safe, no-op if key absent.
+- `src/payments/refund.ts` — Stripe refunds via paymentIntentId stored on Order.
+- `src/pdf/generate.ts` — PDFShift REST, Basic auth, returns Uint8Array.
+- `src/email/send.ts` + `src/email/templates.ts` — Resend, report_delivery wired verbatim.
+  crisis/BDD/wedding-waitlist/hard-fail-apology throw BlockedSeamError (copy not yet written).
+- **Open product questions:** (a) CRISIS/BDD/WEDDING refused users — immediate photo delete
+  or 30-day TTL? (b) comms to `held` (ED/MEDICAL/AGING) users. (c) the 4 missing email copies.
+- **Status:** DONE (core build). Blocked on email copy + M5 for non-happy paths.
+
+## 3d — Manual-review queue (DONE)
+- `src/review/queue.ts` — BlobStore-backed, keys `review/{YYYY-MM-DD}/{orderId}.json`.
+  Strips reportMarkdown before storing (no report content in logs). `scripts/list-reviews.ts`
+  for human reviewer (S3 ListObjectsV2). Wired into `api/generate.ts`.
+- **Status:** DONE.
+
+## 3e — Flagged-emails store (DONE)
+- `src/flagged-emails/store.ts` — HMAC-SHA256 keyed by `FLAGGED_EMAIL_SECRET`, normalises
+  email, BlobStore-backed. `api/intake.ts` checks before accepting a new order.
+- **Status:** DONE.

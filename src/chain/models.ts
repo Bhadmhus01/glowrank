@@ -6,7 +6,7 @@
 // Anthropic model list before go-live.
 export const MODELS = {
   /** Call 1 — Safety Pre-Check: text-only, fast, cheap. */
-  call1SafetyPrecheck: 'claude-haiku-4-5',
+  call1SafetyPrecheck: 'claude-haiku-4-5-20251001',
   /** Call 2 — Photo Analysis: multimodal vision required. */
   call2PhotoAnalysis: 'claude-sonnet-4-6',
   /** Call 3 — Score & Prioritize: reasoning-heavy. */
