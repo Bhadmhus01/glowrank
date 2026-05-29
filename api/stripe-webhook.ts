@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         'Content-Type': 'application/json',
         Authorization: `Bearer ${process.env.GENERATE_SECRET ?? ''}`,
       },
-      body: JSON.stringify({ orderId: action.orderRef }),
+      body: JSON.stringify({ orderId: action.orderRef, paymentIntentId: action.paymentIntentId }),
     }).catch((err: Error) => {
       console.error('generate trigger failed:', err.message, { orderRef: action.orderRef })
     })

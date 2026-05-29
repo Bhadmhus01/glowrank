@@ -3,17 +3,18 @@ import { createS3BlobStoreFromEnv } from '../src/storage/blob-store'
 import { createOrderStore } from '../src/orders/order-store'
 import { createS3StorageClientFromEnv } from '../src/photos/s3-storage'
 import { createReportStore } from '../src/reports/report-store'
+import { renderReportHtml } from '../src/reports/render-html'
 import { runChain } from '../src/chain/orchestrator'
 import { runGenerateForOrder, BlockedSeamError, type GenerateDeps } from '../src/fulfillment/run'
 import { createBlobManualReviewQueue } from '../src/review/queue'
 import { createBlobFlaggedEmailStoreFromEnv } from '../src/flagged-emails/store'
+import { refundOrder } from '../src/payments/refund'
+import { generatePdf } from '../src/pdf/generate'
+import { sendEmailViaCopy } from '../src/email/send'
+import { track } from '../src/analytics/events'
 
 // Internal trigger endpoint — called by stripe-webhook.ts after a verified payment.
 // Never exposed to users. Auth: Authorization: Bearer <GENERATE_SECRET>.
-//
-// Blocked seams (sendEmail, refund, track) are intentionally absent — they throw
-// BlockedSeamError if the outcome requires them, returned as 503 so the issue surfaces
-// for manual handling rather than silently dropping it (FOLLOWUPS M6).
 
 function isAuthorized(authHeader: string | undefined, secret: string | undefined): boolean {
   return typeof secret === 'string' && secret.length > 0 && authHeader === `Bearer ${secret}`
@@ -21,18 +22,45 @@ function isAuthorized(authHeader: string | undefined, secret: string | undefined
 
 function buildDeps(): GenerateDeps {
   const blobStore = createS3BlobStoreFromEnv()
+  const orderStore = createOrderStore(blobStore)
+  const reportStore = createReportStore(blobStore)
   const queue = createBlobManualReviewQueue(blobStore)
   const flaggedEmails = createBlobFlaggedEmailStoreFromEnv(blobStore)
+
   return {
-    orderStore: createOrderStore(blobStore),
+    orderStore,
     storage: createS3StorageClientFromEnv(),
-    reportStore: createReportStore(blobStore),
+    reportStore,
     runChain,
     enqueueManualReview: (ctx) => queue.enqueue(ctx),
     flagEmail: (email) => flaggedEmails.flagEmail(email),
-    // sendEmail: blocked — missing copy + provider (FOLLOWUPS M6)
-    // refund:    blocked — not yet authorized (CLAUDE.md §7)
-    // track:     blocked — analytics provider not chosen (FOLLOWUPS M6)
+
+    refund: async (orderId) => {
+      const order = await orderStore.get(orderId)
+      const piId = order?.stripePaymentIntentId
+      if (!piId) throw new Error(`REFUND_FAILED: no paymentIntentId for order ${orderId}`)
+      await refundOrder(piId)
+    },
+
+    sendEmail: async (payload) => {
+      // For report_delivery: fetch the stored markdown, render HTML, generate PDF (if configured),
+      // then send via Resend. PDF generation is best-effort — email still sends if PDFShift fails.
+      let pdfBytes: Uint8Array | undefined
+      if (payload.kind === 'report_delivery') {
+        try {
+          const markdown = await reportStore.get(payload.reportId)
+          if (markdown && process.env.PDFSHIFT_API_KEY) {
+            const html = renderReportHtml(markdown)
+            pdfBytes = await generatePdf(html)
+          }
+        } catch (err) {
+          console.error('pdf generation failed (email will send without attachment):', (err as Error).message)
+        }
+      }
+      await sendEmailViaCopy(payload, pdfBytes)
+    },
+
+    track,
   }
 }
 
@@ -55,9 +83,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
+  // Store the PaymentIntent ID immediately — needed for any refund this order may trigger.
+  const paymentIntentId: unknown = req.body?.paymentIntentId
+  const deps = buildDeps()
+  if (typeof paymentIntentId === 'string' && paymentIntentId.length > 0) {
+    try {
+      await deps.orderStore.setPaymentIntent?.(orderId, paymentIntentId)
+    } catch (err) {
+      // Log but don't fail — the generation should still proceed; refunds can be issued manually.
+      console.error('setPaymentIntent failed:', (err as Error).message, { orderId })
+    }
+  }
+
   let result
   try {
-    result = await runGenerateForOrder(buildDeps(), orderId)
+    result = await runGenerateForOrder(deps, orderId)
   } catch (err) {
     const msg = (err as Error).message
     if (msg.startsWith('ORDER_NOT_FOUND')) {
@@ -65,9 +105,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
     if (err instanceof BlockedSeamError) {
-      // A required side-effect seam is not yet wired. The order and outcome are not lost —
-      // the report (if delivered) is saved; the manual-review queue has the entry.
-      // Return 503 so the webhook caller can log/alert for manual follow-up.
       console.error('generate blocked seam:', msg, { orderId })
       res.status(503).json({ error: 'BLOCKED_SEAM', detail: msg })
       return
