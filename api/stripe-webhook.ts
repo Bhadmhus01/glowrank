@@ -33,7 +33,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   const action = routeStripeEvent(event)
-  // TODO(M6): if action.kind === 'generate', look up the order (intake + photo keys) by
-  // action.orderRef and run the generate flow (runChain → planFulfillment → execute).
+
+  if (action.kind === 'generate') {
+    // Fire the generate endpoint and return immediately — Stripe needs a fast 200.
+    // If the trigger itself fails, it's logged; the order is still in the store and
+    // can be retried manually (FOLLOWUPS M6: replace with a proper queue when available).
+    const host = process.env.VERCEL_URL ?? 'localhost:3000'
+    const protocol = host.startsWith('localhost') ? 'http' : 'https'
+    void fetch(`${protocol}://${host}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GENERATE_SECRET ?? ''}`,
+      },
+      body: JSON.stringify({ orderId: action.orderRef }),
+    }).catch((err: Error) => {
+      console.error('generate trigger failed:', err.message, { orderRef: action.orderRef })
+    })
+  }
+
   res.status(200).json({ received: true, action: action.kind })
 }
