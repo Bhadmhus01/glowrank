@@ -16,7 +16,7 @@ export function getStripeClient(): Stripe {
 }
 
 export type StripeAction =
-  | { kind: 'generate'; orderRef: string }
+  | { kind: 'generate'; orderRef: string; paymentIntentId: string | null }
   | { kind: 'ignore'; reason: string }
 
 /**
@@ -49,5 +49,6 @@ export function routeStripeEvent(event: Stripe.Event): StripeAction {
   if (session.payment_status !== 'paid') {
     return { kind: 'ignore', reason: `payment_status=${session.payment_status}` }
   }
-  return { kind: 'generate', orderRef }
+  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : null
+  return { kind: 'generate', orderRef, paymentIntentId }
 }

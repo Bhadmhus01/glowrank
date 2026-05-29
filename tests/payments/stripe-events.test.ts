@@ -29,13 +29,21 @@ describe('routeStripeEvent', () => {
   }
 
   it('triggers generation for a paid checkout carrying an order reference', () => {
-    expect(routeStripeEvent(completed({}))).toEqual({ kind: 'generate', orderRef: 'order_123' })
+    expect(routeStripeEvent(completed({}))).toEqual({ kind: 'generate', orderRef: 'order_123', paymentIntentId: null })
+  })
+
+  it('includes paymentIntentId when present on the session', () => {
+    expect(routeStripeEvent(completed({ payment_intent: 'pi_abc123' }))).toEqual({
+      kind: 'generate',
+      orderRef: 'order_123',
+      paymentIntentId: 'pi_abc123',
+    })
   })
 
   it('falls back to metadata.order_id for the reference', () => {
     expect(
       routeStripeEvent(completed({ client_reference_id: null, metadata: { order_id: 'order_meta' } })),
-    ).toEqual({ kind: 'generate', orderRef: 'order_meta' })
+    ).toEqual({ kind: 'generate', orderRef: 'order_meta', paymentIntentId: null })
   })
 
   it('ignores a checkout without any order reference', () => {
