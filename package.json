@@ -24,6 +24,7 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
     "report": "tsx scripts/run-report.ts",
     "list-reviews": "tsx scripts/list-reviews.ts",
+    "preflight": "tsx scripts/preflight.ts",
     "prepare": "husky || true"
   },
   "lint-staged": {

@@ -58,16 +58,23 @@ npm run check           # format check + lint + typecheck + tests
 
 ### Scripts
 
-| Script                                    | What it does                                            |
-| ----------------------------------------- | ------------------------------------------------------- |
-| `npm run check`                           | format check + lint + typecheck + tests (the full gate) |
-| `npm test` / `npm run test:watch`         | run the Vitest suite                                    |
-| `npm run test:coverage`                   | tests with a coverage report                            |
-| `npm run typecheck`                       | `tsc --noEmit`                                          |
-| `npm run lint` / `npm run lint:fix`       | ESLint                                                  |
-| `npm run format` / `npm run format:check` | Prettier                                                |
-| `npm run report`                          | run a report end-to-end locally (dev harness)           |
-| `npm run list-reviews`                    | list the manual-review queue                            |
+| Script                                    | What it does                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| `npm run check`                           | format check + lint + typecheck + tests (the full gate)           |
+| `npm test` / `npm run test:watch`         | run the Vitest suite                                              |
+| `npm run test:coverage`                   | tests with a coverage report                                      |
+| `npm run typecheck`                       | `tsc --noEmit`                                                    |
+| `npm run lint` / `npm run lint:fix`       | ESLint                                                            |
+| `npm run format` / `npm run format:check` | Prettier                                                          |
+| `npm run preflight`                       | check launch-readiness of env/integrations (exits 1 if not ready) |
+| `npm run report`                          | run a report end-to-end locally (dev harness)                     |
+| `npm run list-reviews`                    | list the manual-review queue                                      |
+
+### Launch readiness
+
+Before deploying, run `npm run preflight` — it prints a non-secret readiness table (presence
+only, never values) for every integration and exits non-zero if a launch-critical variable is
+missing. `GET /api/health` is a public liveness probe for uptime monitoring.
 
 ## Project structure
 
