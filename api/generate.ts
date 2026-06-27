@@ -54,7 +54,10 @@ function buildDeps(): GenerateDeps {
             pdfBytes = await generatePdf(html)
           }
         } catch (err) {
-          console.error('pdf generation failed (email will send without attachment):', (err as Error).message)
+          console.error(
+            'pdf generation failed (email will send without attachment):',
+            (err as Error).message,
+          )
         }
       }
       await sendEmailViaCopy(payload, pdfBytes)

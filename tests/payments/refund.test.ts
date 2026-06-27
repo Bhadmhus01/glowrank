@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockRefundsCreate = vi.fn()
 vi.mock('stripe', () => ({
-  default: vi.fn(() => ({
-    refunds: { create: mockRefundsCreate },
-  })),
+  // function (not arrow) so it is constructable under `new Stripe()` in vitest 4.
+  default: vi.fn(function () {
+    return { refunds: { create: mockRefundsCreate } }
+  }),
 }))
 
 beforeEach(() => {

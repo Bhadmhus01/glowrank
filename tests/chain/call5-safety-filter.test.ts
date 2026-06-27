@@ -21,7 +21,12 @@ const manIntake: IntakeJson = {
   makeupOptin: false,
   email: 'daniel@example.com',
 }
-const womanIntake: IntakeJson = { ...manIntake, gender: 'woman', makeupOptin: true, email: 'maya@example.com' }
+const womanIntake: IntakeJson = {
+  ...manIntake,
+  gender: 'woman',
+  makeupOptin: true,
+  email: 'maya@example.com',
+}
 
 function filterJson(over: Record<string, unknown> = {}) {
   return JSON.stringify({
@@ -55,7 +60,9 @@ describe('Call 5 — tone & safety filter', () => {
   })
 
   it('forces HARD_FAIL when hard_fail_reasons is non-empty, even if the model said PASS', async () => {
-    mockedText.mockResolvedValue(filterJson({ verdict: 'PASS', hard_fail_reasons: ['banned term: ugly'] }))
+    mockedText.mockResolvedValue(
+      filterJson({ verdict: 'PASS', hard_fail_reasons: ['banned term: ugly'] }),
+    )
     expect((await runSafetyFilter('# report', manIntake)).verdict).toBe('HARD_FAIL')
   })
 
@@ -81,7 +88,9 @@ describe('Call 5 — tone & safety filter', () => {
   })
 
   it('keeps HARD_FAIL as HARD_FAIL', async () => {
-    mockedText.mockResolvedValue(filterJson({ verdict: 'HARD_FAIL', hard_fail_reasons: ['medical claim'] }))
+    mockedText.mockResolvedValue(
+      filterJson({ verdict: 'HARD_FAIL', hard_fail_reasons: ['medical claim'] }),
+    )
     expect((await runSafetyFilter('# report', manIntake)).verdict).toBe('HARD_FAIL')
   })
 

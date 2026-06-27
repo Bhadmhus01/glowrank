@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { storePhoto, deletePhoto } from '../../src/photos/storage'
-import type {
-  StorageClient,
-  ImageProcessor,
-  PutObjectParams,
-} from '../../src/photos/storage'
+import type { StorageClient, ImageProcessor, PutObjectParams } from '../../src/photos/storage'
 
 function makeDeps() {
   const puts: PutObjectParams[] = []
@@ -23,7 +19,10 @@ function makeDeps() {
   }
   // Pretend the processor strips EXIF and converts everything to JPEG.
   const processor: ImageProcessor = {
-    stripAndNormalize: async () => ({ bytes: new Uint8Array([9, 9, 9]), contentType: 'image/jpeg' }),
+    stripAndNormalize: async () => ({
+      bytes: new Uint8Array([9, 9, 9]),
+      contentType: 'image/jpeg',
+    }),
   }
   return { storage, processor, puts, deletes }
 }

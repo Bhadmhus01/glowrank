@@ -8,8 +8,12 @@ vi.mock('../../src/storage/blob-store', () => ({ createS3BlobStoreFromEnv: vi.fn
 vi.mock('../../src/photos/s3-storage', () => ({ createS3StorageClientFromEnv: vi.fn(() => ({})) }))
 vi.mock('../../src/reports/report-store', () => ({ createReportStore: vi.fn(() => ({})) }))
 vi.mock('../../src/orders/order-store', () => ({ createOrderStore: vi.fn(() => ({})) }))
-vi.mock('../../src/review/queue', () => ({ createBlobManualReviewQueue: vi.fn(() => ({ enqueue: vi.fn() })) }))
-vi.mock('../../src/flagged-emails/store', () => ({ createBlobFlaggedEmailStoreFromEnv: vi.fn(() => ({ flagEmail: vi.fn() })) }))
+vi.mock('../../src/review/queue', () => ({
+  createBlobManualReviewQueue: vi.fn(() => ({ enqueue: vi.fn() })),
+}))
+vi.mock('../../src/flagged-emails/store', () => ({
+  createBlobFlaggedEmailStoreFromEnv: vi.fn(() => ({ flagEmail: vi.fn() })),
+}))
 vi.mock('../../src/chain/orchestrator', () => ({ runChain: vi.fn() }))
 vi.mock('../../src/fulfillment/run', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../src/fulfillment/run')>()
@@ -19,12 +23,17 @@ vi.mock('../../src/fulfillment/run', async (importOriginal) => {
 // Import handler after mocks are set up.
 const { default: handler } = await import('../../api/generate')
 
-function makeReq(overrides: {
-  method?: string
-  authorization?: string | null
-  body?: unknown
-} = {}): Record<string, unknown> {
-  const authorization = overrides.authorization === undefined ? 'Bearer test-secret' : overrides.authorization ?? undefined
+function makeReq(
+  overrides: {
+    method?: string
+    authorization?: string | null
+    body?: unknown
+  } = {},
+): Record<string, unknown> {
+  const authorization =
+    overrides.authorization === undefined
+      ? 'Bearer test-secret'
+      : (overrides.authorization ?? undefined)
   return {
     method: overrides.method ?? 'POST',
     headers: authorization !== null ? { authorization } : {},
@@ -32,10 +41,21 @@ function makeReq(overrides: {
   }
 }
 
-function makeRes(): { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; _code: number; _body: unknown } {
+function makeRes(): {
+  status: ReturnType<typeof vi.fn>
+  json: ReturnType<typeof vi.fn>
+  _code: number
+  _body: unknown
+} {
   const res = { status: vi.fn(), json: vi.fn(), _code: 0, _body: undefined as unknown }
-  res.status.mockImplementation((code: number) => { res._code = code; return res })
-  res.json.mockImplementation((body: unknown) => { res._body = body; return res })
+  res.status.mockImplementation((code: number) => {
+    res._code = code
+    return res
+  })
+  res.json.mockImplementation((body: unknown) => {
+    res._body = body
+    return res
+  })
   return res
 }
 
@@ -84,7 +104,9 @@ describe('POST /api/generate', () => {
   })
 
   it('returns 503 on BlockedSeamError', async () => {
-    mockRunGenerate.mockRejectedValue(new BlockedSeamError('BLOCKED_REFUND_NOT_AUTHORIZED', 'orderId=order-123'))
+    mockRunGenerate.mockRejectedValue(
+      new BlockedSeamError('BLOCKED_REFUND_NOT_AUTHORIZED', 'orderId=order-123'),
+    )
     const res = makeRes()
     await handler(makeReq() as never, res as never)
     expect(res._code).toBe(503)
@@ -101,7 +123,14 @@ describe('POST /api/generate', () => {
   it('returns 200 with status on delivered result', async () => {
     mockRunGenerate.mockResolvedValue({
       outcome: { status: 'delivered', reportMarkdown: '...', filter: {} },
-      plan: { deliverReport: true, refund: false, deletePhotosImmediately: false, flagEmailToPreventRepurchase: false, manualReview: false, email: 'report_delivery' },
+      plan: {
+        deliverReport: true,
+        refund: false,
+        deletePhotosImmediately: false,
+        flagEmailToPreventRepurchase: false,
+        manualReview: false,
+        email: 'report_delivery',
+      },
       reportId: 'report-abc',
     })
     const res = makeRes()
@@ -113,7 +142,14 @@ describe('POST /api/generate', () => {
   it('returns 200 with status and no reportId on refused result', async () => {
     mockRunGenerate.mockResolvedValue({
       outcome: { status: 'refused', classification: 'FLAG_CRISIS', action: 'CRISIS_RESOURCES' },
-      plan: { deliverReport: false, refund: true, deletePhotosImmediately: false, flagEmailToPreventRepurchase: false, manualReview: true, email: 'crisis_resources' },
+      plan: {
+        deliverReport: false,
+        refund: true,
+        deletePhotosImmediately: false,
+        flagEmailToPreventRepurchase: false,
+        manualReview: true,
+        email: 'crisis_resources',
+      },
     })
     const res = makeRes()
     await handler(makeReq() as never, res as never)

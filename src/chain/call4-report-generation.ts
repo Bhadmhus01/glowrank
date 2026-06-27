@@ -30,7 +30,8 @@ function buildUserText(
   lines.push(`- Makeup opt-in: ${intake.makeupOptin}`)
   if (intake.makeupOptin) {
     if (intake.skinUndertone) lines.push(`- Skin undertone: ${intake.skinUndertone}`)
-    if (intake.currentMakeupLevel) lines.push(`- Current makeup level: ${intake.currentMakeupLevel}`)
+    if (intake.currentMakeupLevel)
+      lines.push(`- Current makeup level: ${intake.currentMakeupLevel}`)
   }
   lines.push(`- Active sections to include: ${activeSections(intake, observations).join(', ')}`)
 
@@ -45,7 +46,10 @@ function buildUserText(
     )
   }
 
-  lines.push('', 'Write the full report in Markdown, following your instructions exactly. Output ONLY the report.')
+  lines.push(
+    '',
+    'Write the full report in Markdown, following your instructions exactly. Output ONLY the report.',
+  )
   return lines.join('\n')
 }
 

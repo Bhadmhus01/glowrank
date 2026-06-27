@@ -7,11 +7,12 @@
 
 export type LogLevel = 'info' | 'warn' | 'error'
 
-export function log(level: LogLevel, event: string, meta?: Record<string, unknown>): void {
+// Params are underscore-prefixed: intentionally unused until the redacting logger is built.
+export function log(_level: LogLevel, _event: string, _meta?: Record<string, unknown>): void {
   throw new Error('NOT_IMPLEMENTED: logger (with PII redaction)')
 }
 
 /** Redacts an email to a non-reversible form for safe inclusion in logs. */
-export function redactEmail(email: string): string {
+export function redactEmail(_email: string): string {
   throw new Error('NOT_IMPLEMENTED: email redaction')
 }

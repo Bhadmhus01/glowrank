@@ -1,11 +1,4 @@
-import type {
-  IntakeJson,
-  Observations,
-  Scores,
-  DimensionScore,
-  Priority,
-  Framing,
-} from '../types'
+import type { IntakeJson, Observations, Scores, DimensionScore, Priority, Framing } from '../types'
 import { createTextMessage } from './anthropic'
 import { MODELS } from './models'
 import { CALL_3_SYSTEM_PROMPT, requirePrompt } from './prompts'
@@ -65,22 +58,25 @@ function asPriority(v: unknown, idx: number): Priority {
   if (!isObject(v)) throw new Error(`CALL_3_VALIDATION_ERROR: priority[${idx}] not an object`)
   const { dimension, reason } = v
   const expectedImpact = v.expected_impact
-  if (typeof dimension !== 'string' || typeof reason !== 'string' || typeof expectedImpact !== 'string') {
-    throw new Error(`CALL_3_VALIDATION_ERROR: priority[${idx}] missing dimension/reason/expected_impact`)
+  if (
+    typeof dimension !== 'string' ||
+    typeof reason !== 'string' ||
+    typeof expectedImpact !== 'string'
+  ) {
+    throw new Error(
+      `CALL_3_VALIDATION_ERROR: priority[${idx}] missing dimension/reason/expected_impact`,
+    )
   }
   return { dimension, reason, expectedImpact }
 }
 
-function parseScores(
-  raw: string,
-  ctx: { keepMakeup: boolean; keepProfile: boolean },
-): Scores {
+function parseScores(raw: string, ctx: { keepMakeup: boolean; keepProfile: boolean }): Scores {
   let parsed: unknown
   try {
     parsed = JSON.parse(extractJsonObject(raw))
   } catch (err) {
     if (err instanceof Error && err.message.startsWith('CALL_3_PARSE_ERROR')) throw err
-    throw new Error('CALL_3_PARSE_ERROR: response was not valid JSON')
+    throw new Error('CALL_3_PARSE_ERROR: response was not valid JSON', { cause: err })
   }
   if (!isObject(parsed) || !isObject(parsed.scores)) {
     throw new Error('CALL_3_VALIDATION_ERROR: missing scores object')

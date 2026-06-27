@@ -3,7 +3,10 @@ import { BlockedSeamError } from '../../src/fulfillment/run'
 
 const mockEmailsSend = vi.fn()
 vi.mock('resend', () => ({
-  Resend: vi.fn(() => ({ emails: { send: mockEmailsSend } })),
+  // function (not arrow) so it is constructable under `new Resend()` in vitest 4.
+  Resend: vi.fn(function () {
+    return { emails: { send: mockEmailsSend } }
+  }),
 }))
 
 beforeEach(() => {
@@ -33,7 +36,10 @@ describe('sendEmailViaCopy', () => {
 
   it('attaches PDF when pdfBytes provided', async () => {
     const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46])
-    await sendEmailViaCopy({ kind: 'report_delivery', to: 'user@example.com', reportId: 'rpt-789' }, pdfBytes)
+    await sendEmailViaCopy(
+      { kind: 'report_delivery', to: 'user@example.com', reportId: 'rpt-789' },
+      pdfBytes,
+    )
     const call = mockEmailsSend.mock.calls[0][0] as { attachments: unknown[] }
     expect(call.attachments).toHaveLength(1)
   })

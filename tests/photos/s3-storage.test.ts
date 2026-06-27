@@ -2,12 +2,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock the AWS SDK: capture what gets sent without hitting a real bucket.
 const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }))
+// function (not arrow) impls so the mocked classes are constructable under `new` in vitest 4.
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn(() => ({ send: sendMock })),
-  PutObjectCommand: vi.fn((input: unknown) => ({ kind: 'put', input })),
-  GetObjectCommand: vi.fn((input: unknown) => ({ kind: 'get', input })),
-  DeleteObjectCommand: vi.fn((input: unknown) => ({ kind: 'delete', input })),
-  ListObjectsV2Command: vi.fn((input: unknown) => ({ kind: 'list', input })),
+  S3Client: vi.fn(function () {
+    return { send: sendMock }
+  }),
+  PutObjectCommand: vi.fn(function (input: unknown) {
+    return { kind: 'put', input }
+  }),
+  GetObjectCommand: vi.fn(function (input: unknown) {
+    return { kind: 'get', input }
+  }),
+  DeleteObjectCommand: vi.fn(function (input: unknown) {
+    return { kind: 'delete', input }
+  }),
+  ListObjectsV2Command: vi.fn(function (input: unknown) {
+    return { kind: 'list', input }
+  }),
 }))
 
 import { createS3StorageClient } from '../../src/photos/s3-storage'
@@ -95,7 +106,11 @@ describe('S3 storage adapter', () => {
 
   it('skips objects missing Key or LastModified', async () => {
     sendMock.mockResolvedValueOnce({
-      Contents: [{ Key: 'a' }, { LastModified: new Date() }, { Key: 'b', LastModified: new Date('2026-03-01') }],
+      Contents: [
+        { Key: 'a' },
+        { LastModified: new Date() },
+        { Key: 'b', LastModified: new Date('2026-03-01') },
+      ],
       IsTruncated: false,
     })
     const objs = await storage.list()

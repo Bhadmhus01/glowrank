@@ -43,7 +43,9 @@ for (const key of keys) {
   if (text === undefined) continue
   const entry = JSON.parse(text)
   console.log(`--- ${entry.orderId} ---`)
-  console.log(`  Outcome : ${entry.outcome.status}${entry.outcome.classification ? ` / ${entry.outcome.classification}` : ''}`)
+  console.log(
+    `  Outcome : ${entry.outcome.status}${entry.outcome.classification ? ` / ${entry.outcome.classification}` : ''}`,
+  )
   if (entry.outcome.reasons?.length > 0) {
     console.log(`  Reasons : ${(entry.outcome.reasons as string[]).join(', ')}`)
   }

@@ -30,20 +30,30 @@ function reportUrl(reportId: string): string {
  *
  * Throws BlockedSeamError for email kinds whose copy is not yet in Landing_Copy.md.
  */
-export async function sendEmailViaCopy(payload: EmailPayload, pdfBytes?: Uint8Array): Promise<void> {
+export async function sendEmailViaCopy(
+  payload: EmailPayload,
+  pdfBytes?: Uint8Array,
+): Promise<void> {
   const from = process.env.EMAIL_FROM ?? 'GlowRank <noreply@glowrank.co>'
 
   switch (payload.kind) {
     case 'report_delivery': {
       const url = reportUrl(payload.reportId)
-      const { subject, html } = reportDeliveryTemplate({ reportUrl: url, pdfAttached: pdfBytes !== undefined })
+      const { subject, html } = reportDeliveryTemplate({
+        reportUrl: url,
+        pdfAttached: pdfBytes !== undefined,
+      })
       await getResendClient().emails.send({
         from,
         to: payload.to,
         subject,
         html,
         ...(pdfBytes !== undefined
-          ? { attachments: [{ filename: 'your-glowrank-report.pdf', content: Buffer.from(pdfBytes) }] }
+          ? {
+              attachments: [
+                { filename: 'your-glowrank-report.pdf', content: Buffer.from(pdfBytes) },
+              ],
+            }
           : {}),
       })
       return

@@ -95,7 +95,12 @@ describe('runGenerateForOrder', () => {
     const fx = fixtures({ status: 'hard_fail', reasons: [] }, null)
     await expect(
       runGenerateForOrder(
-        { orderStore: fx.orderStore, storage: fx.storage, reportStore: fx.reportStore, runChain: fx.runChain },
+        {
+          orderStore: fx.orderStore,
+          storage: fx.storage,
+          reportStore: fx.reportStore,
+          runChain: fx.runChain,
+        },
         'missing',
       ),
     ).rejects.toThrow('ORDER_NOT_FOUND')
@@ -125,7 +130,11 @@ describe('runGenerateForOrder', () => {
   })
 
   it('delivered → saves the report, sends report_delivery, tracks report_delivered', async () => {
-    const fx = fixtures({ status: 'delivered', reportMarkdown: '# Your report', filter: PASS_FILTER })
+    const fx = fixtures({
+      status: 'delivered',
+      reportMarkdown: '# Your report',
+      filter: PASS_FILTER,
+    })
     const result = await runGenerateForOrder(
       {
         orderStore: fx.orderStore,
@@ -200,7 +209,12 @@ describe('runGenerateForOrder', () => {
     const fx = fixtures({ status: 'hard_fail', reasons: ['x'] })
     await expect(
       runGenerateForOrder(
-        { orderStore: fx.orderStore, storage: fx.storage, reportStore: fx.reportStore, runChain: fx.runChain },
+        {
+          orderStore: fx.orderStore,
+          storage: fx.storage,
+          reportStore: fx.reportStore,
+          runChain: fx.runChain,
+        },
         'ord_1',
       ),
     ).rejects.toThrow('BLOCKED_REFUND_NOT_AUTHORIZED')
@@ -250,7 +264,11 @@ describe('runGenerateForOrder', () => {
   })
 
   it('refused CRISIS_RESOURCES → refund + manual review + crisis_resources email', async () => {
-    const fx = fixtures({ status: 'refused', classification: 'FLAG_CRISIS', action: 'CRISIS_RESOURCES' })
+    const fx = fixtures({
+      status: 'refused',
+      classification: 'FLAG_CRISIS',
+      action: 'CRISIS_RESOURCES',
+    })
     await runGenerateForOrder(
       {
         orderStore: fx.orderStore,
@@ -312,7 +330,11 @@ describe('runGenerateForOrder', () => {
   })
 
   it('refused WEDDING_WAITLIST → refund + wedding_waitlist email (no manual review, no flag)', async () => {
-    const fx = fixtures({ status: 'refused', classification: 'FLAG_WEDDING', action: 'WEDDING_WAITLIST' })
+    const fx = fixtures({
+      status: 'refused',
+      classification: 'FLAG_WEDDING',
+      action: 'WEDDING_WAITLIST',
+    })
     await runGenerateForOrder(
       {
         orderStore: fx.orderStore,

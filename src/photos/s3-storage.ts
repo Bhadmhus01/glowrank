@@ -95,7 +95,8 @@ export function createS3StorageClientFromEnv(): StorageClient {
     )
   }
   const config: S3StorageConfig = { bucket, accessKeyId, secretAccessKey }
-  if (process.env.PHOTO_STORAGE_ENDPOINT !== undefined) config.endpoint = process.env.PHOTO_STORAGE_ENDPOINT
+  if (process.env.PHOTO_STORAGE_ENDPOINT !== undefined)
+    config.endpoint = process.env.PHOTO_STORAGE_ENDPOINT
   if (process.env.AWS_REGION !== undefined) config.region = process.env.AWS_REGION
   return createS3StorageClient(config)
 }

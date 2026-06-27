@@ -86,7 +86,12 @@ export async function storePhoto(
   const ext = processed.contentType === 'image/png' ? 'png' : 'jpg'
   const key = `photos/${now.toISOString().slice(0, 10)}/${id}.${ext}`
 
-  await deps.storage.put({ key, bytes: processed.bytes, contentType: processed.contentType, uploadedAt: now })
+  await deps.storage.put({
+    key,
+    bytes: processed.bytes,
+    contentType: processed.contentType,
+    uploadedAt: now,
+  })
   return { key, uploadedAt: now.toISOString() }
 }
 

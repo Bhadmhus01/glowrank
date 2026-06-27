@@ -59,7 +59,7 @@ function parseSafetyResult(raw: string): SafetyResult {
     parsed = JSON.parse(extractJsonObject(raw))
   } catch (err) {
     if (err instanceof Error && err.message.startsWith('CALL_1_PARSE_ERROR')) throw err
-    throw new Error('CALL_1_PARSE_ERROR: response was not valid JSON')
+    throw new Error('CALL_1_PARSE_ERROR: response was not valid JSON', { cause: err })
   }
 
   if (typeof parsed !== 'object' || parsed === null) {

@@ -3,16 +3,37 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "license": "UNLICENSED",
   "description": "GlowRank Phase 1 backend — AI glow-up report orchestration (see CLAUDE.md).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bhadmhus01/glowrank.git"
+  },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
     "report": "tsx scripts/run-report.ts",
-    "list-reviews": "tsx scripts/list-reviews.ts"
+    "list-reviews": "tsx scripts/list-reviews.ts",
+    "prepare": "husky || true"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{js,json,yml,yaml,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
@@ -25,11 +46,19 @@
     "stripe": "^17.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/formidable": "^3.5.1",
     "@types/node": "^20.14.0",
-    "@vercel/node": "^3.2.0",
+    "@vercel/node": "^5.8.21",
+    "@vitest/coverage-v8": "^4.1.9",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.9.0",
     "tsx": "^4.22.3",
     "typescript": "^5.5.0",
-    "vitest": "^2.1.0"
+    "typescript-eslint": "^8.62.0",
+    "vitest": "^4.1.9"
   }
 }

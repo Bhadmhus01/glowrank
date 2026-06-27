@@ -3,12 +3,7 @@
 
 export type Gender = 'man' | 'woman' | 'non-binary' | 'prefer-not-to-say'
 
-export type Goal =
-  | 'dating'
-  | 'career'
-  | 'specific-event'
-  | 'new-chapter'
-  | 'general-confidence'
+export type Goal = 'dating' | 'career' | 'specific-event' | 'new-chapter' | 'general-confidence'
 
 export type BudgetTier = 'under-100' | '100-300' | '300-1000' | '1000-plus'
 

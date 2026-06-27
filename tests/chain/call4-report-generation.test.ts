@@ -91,7 +91,9 @@ describe('Call 4 — report generation', () => {
     mockedText.mockResolvedValue('# report')
     await runReportGeneration(manIntake, obs, scores)
     const uc = mockedText.mock.calls[0]![0].userContent
-    expect(uc).toContain('Active sections to include: grooming, skin, wardrobe, photos, body language')
+    expect(uc).toContain(
+      'Active sections to include: grooming, skin, wardrobe, photos, body language',
+    )
     expect(uc).not.toContain(', makeup')
   })
 

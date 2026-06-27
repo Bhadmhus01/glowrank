@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockCapture = vi.fn()
 vi.mock('posthog-node', () => ({
-  PostHog: vi.fn(() => ({ capture: mockCapture })),
+  // function (not arrow) so it is constructable under `new PostHog()` in vitest 4.
+  PostHog: vi.fn(function () {
+    return { capture: mockCapture }
+  }),
 }))
 
 // Import after mock
@@ -36,7 +39,9 @@ describe('track', () => {
   })
 
   it('does not throw if PostHog capture throws', () => {
-    mockCapture.mockImplementation(() => { throw new Error('posthog down') })
+    mockCapture.mockImplementation(() => {
+      throw new Error('posthog down')
+    })
     expect(() => track('refund_requested')).not.toThrow()
   })
 })

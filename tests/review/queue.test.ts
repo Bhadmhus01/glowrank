@@ -17,16 +17,22 @@ const BASE_PLAN: FulfillmentPlan = {
 function makeBlobStore(): BlobStore {
   const data = new Map<string, string>()
   return {
-    putText: vi.fn(async (key, text) => { data.set(key, text) }),
+    putText: vi.fn(async (key, text) => {
+      data.set(key, text)
+    }),
     getText: vi.fn(async (key) => data.get(key) ?? null),
-    delete: vi.fn(async (key) => { data.delete(key) }),
+    delete: vi.fn(async (key) => {
+      data.delete(key)
+    }),
   }
 }
 
 describe('createBlobManualReviewQueue', () => {
   let store: BlobStore
 
-  beforeEach(() => { store = makeBlobStore() })
+  beforeEach(() => {
+    store = makeBlobStore()
+  })
 
   it('writes to review/{date}/{orderId}.json', async () => {
     const queue = createBlobManualReviewQueue(store)
@@ -68,7 +74,19 @@ describe('createBlobManualReviewQueue', () => {
     const deliveredOutcome: GenerationOutcome = {
       status: 'delivered',
       reportMarkdown: 'FULL REPORT CONTENT — must not be stored',
-      filter: { verdict: 'PASS', toneScores: { warmth: 8, specificity: 8, agency: 8, motivation: 8 }, regenerateReasons: [], hardFailReasons: [], structuralCheck: { allSectionsPresent: true, disclaimersPresent: true, makeupCorrectlyPresentOrAbsent: true, wordCount: 1000 }, notesForRegeneration: '' },
+      filter: {
+        verdict: 'PASS',
+        toneScores: { warmth: 8, specificity: 8, agency: 8, motivation: 8 },
+        regenerateReasons: [],
+        hardFailReasons: [],
+        structuralCheck: {
+          allSectionsPresent: true,
+          disclaimersPresent: true,
+          makeupCorrectlyPresentOrAbsent: true,
+          wordCount: 1000,
+        },
+        notesForRegeneration: '',
+      },
     }
     const ctx: ManualReviewContext = {
       orderId: 'order-delivered',

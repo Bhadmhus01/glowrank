@@ -1,0 +1,11 @@
+node_modules
+coverage
+dist
+.vercel
+package-lock.json
+
+# Source-of-truth product copy — never reformat (CLAUDE.md §2 rule 1/2)
+docs/
+
+# The operating contract — leave its formatting to the founder.
+CLAUDE.md

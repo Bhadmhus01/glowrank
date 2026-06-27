@@ -5,27 +5,33 @@ relevant code path goes live. The product/safety docs in `/docs` remain source o
 this file is engineering tracking only.
 
 ## M1 — Verify Anthropic model aliases before any real (non-mocked) call (DONE)
+
 - `claude-sonnet-4-6` and `claude-opus-4-7` bare aliases confirmed valid.
 - `claude-haiku-4-5` bare alias not confirmed — updated to dated pin
   `claude-haiku-4-5-20251001` (the only known valid Haiku 4.5 ID).
 - **Status:** DONE.
 
 ## M2 — Opus-on-Call-4 vs the $1.20/report budget
+
 CLAUDE.md §5 assigns Opus to Call 4; `Prompt_Chain.md`'s cost table assumes Sonnet.
 Opus likely pushes women's-with-makeup reports past the §5 ceiling.
+
 - **Resolve:** measure real Call 4 cost once implemented; raise with founder before
   launch. Do NOT silently downgrade the model (§8).
 - **Status:** open. **Blocks:** launch cost sign-off (not code).
 
 ## M3 — Orchestrator must honor the fail-closed contracts (ADDRESSED)
+
 `runSafetyPrecheck` (Call 1) and `runSafetyFilter` (Call 5) throw on unparseable/invalid
 output and must never be treated as `PASS`/deliver.
+
 - **Status:** ADDRESSED in `src/chain/orchestrator.ts` — a thrown Call 1 or Call 5, an
   exhausted regenerate loop, and a deterministic banned-term hit all resolve to
   non-delivery (`hard_fail`). Covered by orchestrator tests. Keep this invariant if the
   orchestrator is refactored.
 
 ## M4 — Photo storage + image-processor adapters (MOSTLY ADDRESSED)
+
 - **`ImageProcessor`** — built: `src/photos/image-processor.ts` (sharp 0.34.5 / libvips
   8.17.3). Re-encodes to JPEG (strips EXIF; converts HEIC/HEIF → JPEG). **HEIF input
   support confirmed** on this machine, so no `heic-convert` needed. Verify it also holds on
@@ -40,11 +46,13 @@ output and must never be treated as `PASS`/deliver.
 - **Status:** core adapters done + deletion live. Remaining bits tracked under M6.
 
 ## M5 — Modified-report variants for ED / MEDICAL / AGING flags
+
 Call 1 can return `FLAG_ED`, `FLAG_MEDICAL`, `FLAG_AGING`, which Trust_Safety §2.2/§2.3/§2.4
-route to a *modified* report (ED → omit body-composition + ED resources; MEDICAL → no skin
+route to a _modified_ report (ED → omit body-composition + ED resources; MEDICAL → no skin
 advice + dermatologist referral; AGING → reframe tone, no anti-aging language). Call 4's
 prompt is the STANDARD report only — there is no approved modified variant, and serving a
 standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
+
 - **Interim (built):** the orchestrator returns `status: 'held'` for these flags — it does
   NOT generate a standard report. They need manual handling / a resource path.
 - **Resolve:** design modified Call 4 modes (new prompt work → founder sign-off), plus the
@@ -56,7 +64,9 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - **Status:** design done; implementation open. **Blocks:** automated handling of ED/MEDICAL/AGING users.
 
 ## M6 — Fulfillment execution layer + API handlers
+
 `src/fulfillment/plan.ts` decides the post-generation actions. **Done so far:**
+
 - Stripe webhook signature verification + event routing (`src/payments/stripe.ts`,
   `api/stripe-webhook.ts`) — on a PAID checkout, yields a `generate` action with the order
   ref. Does NOT yet trigger generation or refund.
@@ -67,6 +77,7 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
   missing). The write side (saving a delivered report) is wired when the generate flow lands.
 
 **Decisions needed from the founder before the rest:**
+
 - **Email copy gap (blocker):** only the report-delivery email exists (Landing_Copy §8.1).
   The crisis / BDD / wedding-waitlist / hard-fail-apology emails are NOT written anywhere —
   needed before the email layer can be built (CLAUDE.md §2 rule 2 forbids inventing them).
@@ -85,6 +96,7 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - **Refund execution:** explicit go-ahead to write code that issues Stripe refunds (§7).
 
 **Build status — all M6 items complete:**
+
 - `src/fulfillment/run.ts` — spine built; all seams wired (email, refund, queue, flag, analytics).
 - `api/generate.ts` — auth-gated internal trigger; wires all deps; BlockedSeamError → 503.
 - `api/stripe-webhook.ts` — verifies signature, routes event, fires generate, returns 200.
@@ -99,12 +111,14 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - **Status:** DONE (core build). Blocked on email copy + M5 for non-happy paths.
 
 ## 3d — Manual-review queue (DONE)
+
 - `src/review/queue.ts` — BlobStore-backed, keys `review/{YYYY-MM-DD}/{orderId}.json`.
   Strips reportMarkdown before storing (no report content in logs). `scripts/list-reviews.ts`
   for human reviewer (S3 ListObjectsV2). Wired into `api/generate.ts`.
 - **Status:** DONE.
 
 ## 3e — Flagged-emails store (DONE)
+
 - `src/flagged-emails/store.ts` — HMAC-SHA256 keyed by `FLAGGED_EMAIL_SECRET`, normalises
   email, BlobStore-backed. `api/intake.ts` checks before accepting a new order.
 - **Status:** DONE.

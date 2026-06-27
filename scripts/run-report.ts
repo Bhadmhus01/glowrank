@@ -19,7 +19,11 @@ import { routeSafetyClassification } from '../src/safety/routing'
 import { containsBannedContent } from '../src/safety/banned-terms'
 import { planFulfillment } from '../src/fulfillment/plan'
 import { runSafetyPrecheck } from '../src/chain/call1-safety-precheck'
-import { runPhotoAnalysis, type AnalysisImage, type PhotoCategory } from '../src/chain/call2-photo-analysis'
+import {
+  runPhotoAnalysis,
+  type AnalysisImage,
+  type PhotoCategory,
+} from '../src/chain/call2-photo-analysis'
 import { runScoreAndPrioritize } from '../src/chain/call3-score-prioritize'
 import { runReportGeneration } from '../src/chain/call4-report-generation'
 import { runSafetyFilter } from '../src/chain/call5-safety-filter'
@@ -59,14 +63,21 @@ function loadImages(photos: InputFile['photos']): AnalysisImage[] {
       die(`Unsupported image "${p.path}". Use JPG or PNG — HEIC→JPEG conversion is M4 (not built).`)
     }
     try {
-      return { category: p.category, mediaType, bytes: new Uint8Array(readFileSync(resolve(p.path))) }
+      return {
+        category: p.category,
+        mediaType,
+        bytes: new Uint8Array(readFileSync(resolve(p.path))),
+      }
     } catch {
       return die(`Could not read photo: ${p.path}`)
     }
   })
 }
 
-async function runPipeline(intake: IntakeJson, images: AnalysisImage[]): Promise<GenerationOutcome> {
+async function runPipeline(
+  intake: IntakeJson,
+  images: AnalysisImage[],
+): Promise<GenerationOutcome> {
   if (!isAgeEligible(intake.age)) {
     console.log(`▶ Age gate ... ✗ (age ${intake.age} < 18)`)
     return { status: 'refused', classification: 'FLAG_AGE', action: 'REFUSE_AGE' }
@@ -97,21 +108,29 @@ async function runPipeline(intake: IntakeJson, images: AnalysisImage[]): Promise
   let notes: string | undefined
   for (let attempt = 0; attempt <= MAX_REGENERATIONS; attempt++) {
     const label = `Call 4 — report generation (Opus)${attempt > 0 ? ` [retry ${attempt}]` : ''}`
-    const report = await astep(label, () => runReportGeneration(intake, observations, scores, notes))
+    const report = await astep(label, () =>
+      runReportGeneration(intake, observations, scores, notes),
+    )
 
     const scan = containsBannedContent(report)
     if (scan.banned) {
       console.log(`   ✗ deterministic banned-term backstop: ${scan.matches.join(', ')}`)
-      return { status: 'hard_fail', reasons: scan.matches.map((t) => `banned term (deterministic): ${t}`) }
+      return {
+        status: 'hard_fail',
+        reasons: scan.matches.map((t) => `banned term (deterministic): ${t}`),
+      }
     }
 
-    const filter = await astep('Call 5 — tone & safety filter (Sonnet)', () => runSafetyFilter(report, intake))
+    const filter = await astep('Call 5 — tone & safety filter (Sonnet)', () =>
+      runSafetyFilter(report, intake),
+    )
     console.log(
       `   → verdict=${filter.verdict}; tone=${JSON.stringify(filter.toneScores)}; words=${filter.structuralCheck.wordCount}`,
     )
 
     if (filter.verdict === 'PASS') return { status: 'delivered', reportMarkdown: report, filter }
-    if (filter.verdict === 'HARD_FAIL') return { status: 'hard_fail', reasons: filter.hardFailReasons }
+    if (filter.verdict === 'HARD_FAIL')
+      return { status: 'hard_fail', reasons: filter.hardFailReasons }
 
     notes = [filter.notesForRegeneration, ...filter.regenerateReasons]
       .filter((s) => s.trim().length > 0)
@@ -157,7 +176,9 @@ async function main(): Promise<void> {
   console.log(
     `Intake: gender=${input.intake.gender}, goal=${input.intake.goal}, budget=${input.intake.budgetTier}, makeup=${input.intake.makeupOptin}`,
   )
-  console.log(`Photos: ${images.map((i) => i.category).join(', ') || '(none — Call 2 needs the 3 required photos)'}\n`)
+  console.log(
+    `Photos: ${images.map((i) => i.category).join(', ') || '(none — Call 2 needs the 3 required photos)'}\n`,
+  )
 
   printOutcome(await runPipeline(input.intake, images))
 }
