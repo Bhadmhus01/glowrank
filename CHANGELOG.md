@@ -16,6 +16,8 @@ All notable changes to this project are documented here. The format is based on
   webhooks and manual replays no longer double-run the chain or re-deliver.
 - Stripe Checkout-session endpoint (`api/checkout.ts`) linking intake → payment → generation.
 - `M5_DESIGN.md` — engineering design for modified-report variants (ED / MEDICAL / AGING).
+- Launch-readiness tooling: centralized env config + readiness check (`src/config/env.ts`), an
+  operator `npm run preflight` CLI, and a public `GET /api/health` liveness probe.
 
 ### Changed
 
