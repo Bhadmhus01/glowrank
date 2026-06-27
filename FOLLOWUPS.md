@@ -49,7 +49,11 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
   NOT generate a standard report. They need manual handling / a resource path.
 - **Resolve:** design modified Call 4 modes (new prompt work → founder sign-off), plus the
   resource pages and the held-user flow.
-- **Status:** open. **Blocks:** automated handling of ED/MEDICAL/AGING users.
+- **Design (NEW):** engineering design written — see [M5_DESIGN.md](M5_DESIGN.md). Threads a
+  `ReportMode` through the existing Call 4/5 loop (no chain fork); build order AGING → MEDICAL
+  → ED. Code is gated on owner/clinical deliverables (approved prompt variants, ED delivery
+  email copy, 2 resource pages). Until those exist, keep returning `held`.
+- **Status:** design done; implementation open. **Blocks:** automated handling of ED/MEDICAL/AGING users.
 
 ## M6 — Fulfillment execution layer + API handlers
 `src/fulfillment/plan.ts` decides the post-generation actions. **Done so far:**
@@ -72,6 +76,12 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - **Order linking / store:** how a Checkout Session maps to the stored intake + photo keys
   (proposal: store the order in object storage keyed by an order id; set it as the
   Session's `client_reference_id`). Account-less (CLAUDE.md §4).
+  - **ADDRESSED:** `api/checkout.ts` + `src/payments/checkout.ts` create a hosted Checkout
+    Session for an existing order, setting `client_reference_id` + `metadata.order_id` (both
+    read by `routeStripeEvent`). Front-end flow: `api/intake` → `{ orderId }` → POST
+    `api/checkout` → `{ url }` → redirect. Product name + $9.99 price are verbatim from
+    Landing_Copy §6.1; `STRIPE_PRICE_ID` (optional) overrides inline price_data. Idempotent per
+    order id. **Note:** Apple/Google Pay come from the Stripe dashboard's payment-method config.
 - **Refund execution:** explicit go-ahead to write code that issues Stripe refunds (§7).
 
 **Build status — all M6 items complete:**
