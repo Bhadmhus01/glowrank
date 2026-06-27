@@ -52,6 +52,8 @@ export interface GenerateDeps {
   track?: (event: FunnelEvent, props?: Record<string, string | number | boolean>) => void
   /** Injectable for tests; defaults to a random UUID. Non-guessable per PRD §3.2 Step 5. */
   newReportId?: () => string
+  /** Injectable for tests; defaults to the current time. Stamps the fulfillment record. */
+  now?: () => string
 }
 
 export interface GenerateResult {
@@ -59,6 +61,8 @@ export interface GenerateResult {
   plan: FulfillmentPlan
   /** Present iff plan.deliverReport === true. */
   reportId?: string
+  /** True when this order already reached a terminal outcome and was short-circuited (no re-run). */
+  alreadyFulfilled?: boolean
 }
 
 export class BlockedSeamError extends Error {
@@ -75,6 +79,21 @@ export async function runGenerateForOrder(
   const order = await deps.orderStore.get(orderId)
   if (order === null) {
     throw new Error(`ORDER_NOT_FOUND: ${orderId}`)
+  }
+
+  // Idempotency / replay: if this order already reached a terminal outcome, do NOT re-run the
+  // chain. Stripe can re-send checkout.session.completed, and a manual replay re-POSTs here —
+  // re-running would incur double AI cost and re-deliver. The plan is pure, so re-derive it from
+  // the recorded outcome; the side effects already ran on the original pass. Only orders that
+  // never reached a terminal outcome (early failure) re-run, which is exactly the recovery case.
+  if (order.fulfillment) {
+    const recorded = order.fulfillment
+    return {
+      outcome: recorded.outcome,
+      plan: planFulfillment(recorded.outcome),
+      ...(recorded.reportId !== undefined ? { reportId: recorded.reportId } : {}),
+      alreadyFulfilled: true,
+    }
   }
 
   // Fetch processed photo bytes in parallel — already EXIF-stripped and JPEG/PNG.
@@ -138,6 +157,25 @@ export async function runGenerateForOrder(
   // 7. Funnel events (PRD §9.1). Segment by gender; NO PII in props (CLAUDE.md §9).
   if (plan.deliverReport) track('report_delivered', { gender: order.intake.gender })
   if (plan.refund) track('refund_requested', { gender: order.intake.gender })
+
+  // 8. Record the terminal outcome so a re-sent webhook / manual replay short-circuits above.
+  //    reportMarkdown is redacted from the stored outcome (CLAUDE.md §9) — the report lives in
+  //    the report store under reportId. Best-effort: a storage failure here must NOT 500 (the
+  //    user already got their report); it only weakens idempotency for this one order.
+  const now = deps.now ?? ((): string => new Date().toISOString())
+  const recordedOutcome: GenerationOutcome =
+    outcome.status === 'delivered' ? { ...outcome, reportMarkdown: '' } : outcome
+  try {
+    await deps.orderStore.markFulfilled?.(orderId, {
+      outcome: recordedOutcome,
+      ...(reportId !== undefined ? { reportId } : {}),
+      at: now(),
+    })
+  } catch (err) {
+    console.error('markFulfilled failed (order may re-run on retry):', (err as Error).message, {
+      orderId,
+    })
+  }
 
   return { outcome, plan, ...(reportId !== undefined ? { reportId } : {}) }
 }

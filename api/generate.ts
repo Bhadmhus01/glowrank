@@ -120,5 +120,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   res.status(200).json({
     status: result.outcome.status,
     ...(result.reportId !== undefined ? { reportId: result.reportId } : {}),
+    ...(result.alreadyFulfilled ? { alreadyFulfilled: true } : {}),
   })
 }
