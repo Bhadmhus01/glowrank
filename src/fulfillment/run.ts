@@ -139,7 +139,7 @@ export async function runGenerateForOrder(
   if (plan.deliverReport) track('report_delivered', { gender: order.intake.gender })
   if (plan.refund) track('refund_requested', { gender: order.intake.gender })
 
-  return { outcome, plan, reportId }
+  return { outcome, plan, ...(reportId !== undefined ? { reportId } : {}) }
 }
 
 function buildEmailPayload(

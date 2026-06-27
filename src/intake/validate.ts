@@ -91,11 +91,12 @@ export function validateIntake(data: unknown): IntakeJson {
     heightCm: heightCm as number,
     bodyType,
     stylePreferences: stylePreferences as string[],
-    wardrobeVibe,
     makeupOptin: data.makeupOptin,
-    skinUndertone,
-    currentMakeupLevel,
-    freeText,
     email: email.trim(),
+    // Optional fields included only when present (exactOptionalPropertyTypes).
+    ...(wardrobeVibe !== undefined ? { wardrobeVibe } : {}),
+    ...(skinUndertone !== undefined ? { skinUndertone } : {}),
+    ...(currentMakeupLevel !== undefined ? { currentMakeupLevel } : {}),
+    ...(freeText !== undefined ? { freeText } : {}),
   }
 }
