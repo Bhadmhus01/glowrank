@@ -46,7 +46,7 @@ function fixtures(outcome: GenerationOutcome, order: Order | null = ORDER) {
   const deletedKeys: string[] = []
   const fetchedKeys: string[] = []
 
-  const orderStore = { put: vi.fn(), get: vi.fn().mockResolvedValue(order) }
+  const orderStore = { put: vi.fn(), get: vi.fn().mockResolvedValue(order), markFulfilled: vi.fn() }
 
   const storage: StorageClient = {
     put: async () => {},
@@ -371,6 +371,109 @@ describe('runGenerateForOrder', () => {
         'ord_1',
       ),
     ).rejects.toThrow('BLOCKED_MANUAL_REVIEW_QUEUE_MISSING')
+  })
+
+  it('records fulfillment after a delivered run, redacting reportMarkdown (CLAUDE.md §9)', async () => {
+    const fx = fixtures({
+      status: 'delivered',
+      reportMarkdown: '# secret report',
+      filter: PASS_FILTER,
+    })
+    await runGenerateForOrder(
+      {
+        orderStore: fx.orderStore,
+        storage: fx.storage,
+        reportStore: fx.reportStore,
+        runChain: fx.runChain,
+        sendEmail: fx.sendEmail,
+        newReportId: () => 'rid_keep',
+        now: () => '2026-06-27T00:00:00.000Z',
+      },
+      'ord_1',
+    )
+
+    expect(fx.orderStore.markFulfilled).toHaveBeenCalledTimes(1)
+    const [id, fulfillment] = fx.orderStore.markFulfilled.mock.calls[0]
+    expect(id).toBe('ord_1')
+    expect(fulfillment.reportId).toBe('rid_keep')
+    expect(fulfillment.at).toBe('2026-06-27T00:00:00.000Z')
+    expect(fulfillment.outcome.status).toBe('delivered')
+    // The report text must NOT be duplicated into the order JSON.
+    expect(fulfillment.outcome.reportMarkdown).toBe('')
+  })
+
+  it('already-fulfilled order short-circuits: no chain re-run, no re-save, no re-email, no re-track', async () => {
+    const fulfilledOrder: Order = {
+      ...ORDER,
+      fulfillment: {
+        outcome: { status: 'delivered', reportMarkdown: '', filter: PASS_FILTER },
+        reportId: 'rid_done',
+        at: '2026-06-01T00:00:00.000Z',
+      },
+    }
+    const fx = fixtures(
+      { status: 'delivered', reportMarkdown: '# r', filter: PASS_FILTER },
+      fulfilledOrder,
+    )
+    const result = await runGenerateForOrder(
+      {
+        orderStore: fx.orderStore,
+        storage: fx.storage,
+        reportStore: fx.reportStore,
+        runChain: fx.runChain,
+        sendEmail: fx.sendEmail,
+        refund: fx.refund,
+        track: fx.track,
+      },
+      'ord_1',
+    )
+
+    expect(result.alreadyFulfilled).toBe(true)
+    expect(result.outcome.status).toBe('delivered')
+    expect(result.reportId).toBe('rid_done')
+    expect(result.plan.deliverReport).toBe(true)
+    // None of the side effects re-fire on a replay/duplicate webhook.
+    expect(fx.runChain).not.toHaveBeenCalled()
+    expect(fx.savedReports.size).toBe(0)
+    expect(fx.sendEmail).not.toHaveBeenCalled()
+    expect(fx.track).not.toHaveBeenCalled()
+    expect(fx.orderStore.markFulfilled).not.toHaveBeenCalled()
+    expect(fx.fetchedKeys).toEqual([])
+  })
+
+  it('does NOT record fulfillment when a required seam throws (so a retry can complete it)', async () => {
+    // hard_fail needs a refund seam; omit it → throws before the fulfillment record.
+    const fx = fixtures({ status: 'hard_fail', reasons: ['x'] })
+    await expect(
+      runGenerateForOrder(
+        {
+          orderStore: fx.orderStore,
+          storage: fx.storage,
+          reportStore: fx.reportStore,
+          runChain: fx.runChain,
+        },
+        'ord_1',
+      ),
+    ).rejects.toThrow('BLOCKED_REFUND_NOT_AUTHORIZED')
+    expect(fx.orderStore.markFulfilled).not.toHaveBeenCalled()
+  })
+
+  it('a failing markFulfilled does not fail the run (best-effort idempotency)', async () => {
+    const fx = fixtures({ status: 'delivered', reportMarkdown: '# r', filter: PASS_FILTER })
+    fx.orderStore.markFulfilled.mockRejectedValue(new Error('blob down'))
+    const result = await runGenerateForOrder(
+      {
+        orderStore: fx.orderStore,
+        storage: fx.storage,
+        reportStore: fx.reportStore,
+        runChain: fx.runChain,
+        sendEmail: fx.sendEmail,
+        newReportId: () => 'rid_x',
+      },
+      'ord_1',
+    )
+    expect(result.outcome.status).toBe('delivered')
+    expect(fx.savedReports.size).toBe(1)
   })
 
   it('no track injected → defaults to no-op (no throw on a successful delivered run)', async () => {

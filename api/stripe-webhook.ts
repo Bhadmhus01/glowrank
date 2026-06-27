@@ -36,8 +36,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (action.kind === 'generate') {
     // Fire the generate endpoint and return immediately — Stripe needs a fast 200.
-    // If the trigger itself fails, it's logged; the order is still in the store and
-    // can be retried manually (FOLLOWUPS M6: replace with a proper queue when available).
+    // If the trigger itself fails, it's logged; the order is still in the store and can be
+    // replayed by re-POSTing to /api/generate. Generation is idempotent: once an order reaches
+    // a terminal outcome it records a fulfillment marker and re-runs short-circuit, so a re-sent
+    // checkout.session.completed (Stripe retries) or a manual replay never double-charges the AI
+    // chain or re-delivers. (FOLLOWUPS M6: replace fire-and-forget with a proper queue later.)
     const host = process.env.VERCEL_URL ?? 'localhost:3000'
     const protocol = host.startsWith('localhost') ? 'http' : 'https'
     void fetch(`${protocol}://${host}/api/generate`, {

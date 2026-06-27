@@ -100,6 +100,12 @@ standard report to an ED-flagged user is an incident (Trust_Safety §7.1).
 - `src/fulfillment/run.ts` — spine built; all seams wired (email, refund, queue, flag, analytics).
 - `api/generate.ts` — auth-gated internal trigger; wires all deps; BlockedSeamError → 503.
 - `api/stripe-webhook.ts` — verifies signature, routes event, fires generate, returns 200.
+- **Generation idempotency / replay (NEW):** `runGenerateForOrder` records a terminal-outcome
+  marker on the order (`Order.fulfillment`, reportMarkdown redacted) and short-circuits if it's
+  already set. Makes the fire-and-forget trigger safe against Stripe re-sending
+  `checkout.session.completed`, and lets a failed order be replayed by re-POSTing to
+  `/api/generate` (only non-terminal orders re-run). Best-effort: a failed marker write is logged,
+  not fatal. See `src/orders/order-store.ts` `markFulfilled`.
 - `api/intake.ts` — multipart parse, age gate, flagged-email check, photo store, order create.
 - `src/analytics/events.ts` — PostHog, serverless-safe, no-op if key absent.
 - `src/payments/refund.ts` — Stripe refunds via paymentIntentId stored on Order.

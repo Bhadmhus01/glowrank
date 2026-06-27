@@ -49,4 +49,29 @@ describe('order store', () => {
     const { blob } = fakeBlob()
     expect(await createOrderStore(blob).get('nope')).toBeNull()
   })
+
+  it('markFulfilled persists the terminal outcome and get() returns it', async () => {
+    const { blob } = fakeBlob()
+    const orders = createOrderStore(blob)
+    await orders.put(order)
+    await orders.markFulfilled?.('order_abc', {
+      outcome: { status: 'hard_fail', reasons: ['x'] },
+      at: '2026-06-27T00:00:00.000Z',
+    })
+    const stored = await orders.get('order_abc')
+    expect(stored?.fulfillment?.outcome.status).toBe('hard_fail')
+    expect(stored?.fulfillment?.at).toBe('2026-06-27T00:00:00.000Z')
+    // Existing fields are preserved.
+    expect(stored?.intake.email).toBe('daniel@example.com')
+  })
+
+  it('markFulfilled throws ORDER_NOT_FOUND for an unknown order', async () => {
+    const { blob } = fakeBlob()
+    await expect(
+      createOrderStore(blob).markFulfilled?.('nope', {
+        outcome: { status: 'hard_fail', reasons: [] },
+        at: '2026-06-27T00:00:00.000Z',
+      }),
+    ).rejects.toThrow('ORDER_NOT_FOUND')
+  })
 })
