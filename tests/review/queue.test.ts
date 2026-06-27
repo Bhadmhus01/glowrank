@@ -68,7 +68,7 @@ describe('createBlobManualReviewQueue', () => {
     const deliveredOutcome: GenerationOutcome = {
       status: 'delivered',
       reportMarkdown: 'FULL REPORT CONTENT — must not be stored',
-      filter: { verdict: 'PASS', toneScores: { warmth: 8, specificity: 8, agency: 8, motivation: 8 }, regenerateReasons: [], hardFailReasons: [], structureChecks: { hasDisclaimer: true, hasSections: true, wordCountOk: true, makeupSectionAppropriate: true }, notesForRegeneration: '' },
+      filter: { verdict: 'PASS', toneScores: { warmth: 8, specificity: 8, agency: 8, motivation: 8 }, regenerateReasons: [], hardFailReasons: [], structuralCheck: { allSectionsPresent: true, disclaimersPresent: true, makeupCorrectlyPresentOrAbsent: true, wordCount: 1000 }, notesForRegeneration: '' },
     }
     const ctx: ManualReviewContext = {
       orderId: 'order-delivered',

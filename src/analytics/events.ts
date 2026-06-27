@@ -47,7 +47,7 @@ export function track(
   if (!process.env.POSTHOG_API_KEY) return
   try {
     // Each server-side event gets a random distinctId — account-less product (CLAUDE.md §4).
-    getClient().capture({ distinctId: randomUUID(), event, properties: props })
+    getClient().capture({ distinctId: randomUUID(), event, ...(props !== undefined ? { properties: props } : {}) })
   } catch {
     // Never throw from analytics — a tracking failure must not block the delivery flow.
   }
