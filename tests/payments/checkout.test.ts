@@ -12,9 +12,10 @@ import {
 type CreateParams = Stripe.Checkout.SessionCreateParams
 type CreateOpts = { idempotencyKey?: string }
 
-function fakeStripe(
-  result: () => { id: string; url: string | null },
-): { stripe: Stripe; calls: Array<{ params: CreateParams; opts: CreateOpts | undefined }> } {
+function fakeStripe(result: () => { id: string; url: string | null }): {
+  stripe: Stripe
+  calls: Array<{ params: CreateParams; opts: CreateOpts | undefined }>
+} {
   const calls: Array<{ params: CreateParams; opts: CreateOpts | undefined }> = []
   const stripe = {
     checkout: {

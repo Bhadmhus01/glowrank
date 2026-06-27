@@ -33,7 +33,8 @@ export const MAX_REGENERATIONS = 2
 function buildRegenerationNotes(filter: FilterResult): string {
   const parts: string[] = []
   if (filter.notesForRegeneration.trim().length > 0) parts.push(filter.notesForRegeneration.trim())
-  if (filter.regenerateReasons.length > 0) parts.push(`Issues to fix: ${filter.regenerateReasons.join('; ')}`)
+  if (filter.regenerateReasons.length > 0)
+    parts.push(`Issues to fix: ${filter.regenerateReasons.join('; ')}`)
   return parts.length > 0
     ? parts.join('\n')
     : 'Improve warmth, specificity, agency, structure, and disclaimers per the guidelines.'
@@ -106,7 +107,10 @@ export async function runChain(input: GenerationInput): Promise<GenerationOutcom
     // HARD_FAIL regardless of what Call 5 would say (CLAUDE.md §2 rule 6).
     const scan = containsBannedContent(report)
     if (scan.banned) {
-      return { status: 'hard_fail', reasons: scan.matches.map((t) => `banned term (deterministic): ${t}`) }
+      return {
+        status: 'hard_fail',
+        reasons: scan.matches.map((t) => `banned term (deterministic): ${t}`),
+      }
     }
 
     let filter: FilterResult

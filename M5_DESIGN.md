@@ -6,7 +6,7 @@ variants + 2 resource pages + 1 follow-up email copy (all owner/clinical deliver
 This document is engineering tracking only (like `FOLLOWUPS.md`). The product/safety docs in
 `/docs` remain source of truth. **No prompts or user-facing copy are authored here** — per
 CLAUDE.md §2 rules 1 & 2, those require founder + clinical sign-off and must land in
-`/docs/Prompt_Chain.md` and `/docs/Landing_Copy.md` respectively. This is the *code shape* that
+`/docs/Prompt_Chain.md` and `/docs/Landing_Copy.md` respectively. This is the _code shape_ that
 will consume them once they exist.
 
 ---
@@ -16,8 +16,8 @@ will consume them once they exist.
 Call 1 can classify a user as `FLAG_ED`, `FLAG_MEDICAL`, or `FLAG_AGING`. Trust_Safety §2.2 /
 §2.4 / §6 require these users to receive a **modified report**, not a refusal and not the
 standard report. Serving a standard report to an ED-flagged user is a logged **incident**
-(Trust_Safety §7.1: *"A user with ED signals receives an unmodified report with body
-composition language."*).
+(Trust_Safety §7.1: _"A user with ED signals receives an unmodified report with body
+composition language."_).
 
 Today the orchestrator has no modified Call 4, so it returns `status: 'held'`
 ([src/chain/orchestrator.ts:77-82](src/chain/orchestrator.ts)) and
@@ -29,11 +29,11 @@ no refund. M5 closes that gap.
 
 ## 2. The three modes (from Trust_Safety)
 
-| Mode | Trigger | Report disposition | Hard content rules |
-|------|---------|-------------------|--------------------|
-| **ED** (`MODIFIED_ED`) | `FLAG_ED` | Modify, **do not refuse** (§2.2: refusal can read as rejection) | Omit **all** body-composition / weight / body-shape advice. Strengthen grooming, wardrobe-fit, photo-skill, makeup to compensate. Prominent ED-helpline resources. Warm follow-up email. Manual review. |
-| **MEDICAL** (`MODIFIED_MEDICAL`) | `FLAG_MEDICAL` | Modify | No skin treatment advice beyond basics; recommend dermatologist consultation for anything beyond basic (§ skin handling). |
-| **AGING** (`MODIFIED_AGING`) | `FLAG_AGING` | **Generate normally**, modified tone (§2.4: *not* a hard-refusal category) | Reframe skin/grooming around "rested, confident version of yourself," never "younger." Forbid the words `anti-aging`, `younger`, `reverse`, `erase`, `age spots`(-as-defect). Short neutral-aging note in the report. |
+| Mode                             | Trigger        | Report disposition                                                         | Hard content rules                                                                                                                                                                                                    |
+| -------------------------------- | -------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ED** (`MODIFIED_ED`)           | `FLAG_ED`      | Modify, **do not refuse** (§2.2: refusal can read as rejection)            | Omit **all** body-composition / weight / body-shape advice. Strengthen grooming, wardrobe-fit, photo-skill, makeup to compensate. Prominent ED-helpline resources. Warm follow-up email. Manual review.               |
+| **MEDICAL** (`MODIFIED_MEDICAL`) | `FLAG_MEDICAL` | Modify                                                                     | No skin treatment advice beyond basics; recommend dermatologist consultation for anything beyond basic (§ skin handling).                                                                                             |
+| **AGING** (`MODIFIED_AGING`)     | `FLAG_AGING`   | **Generate normally**, modified tone (§2.4: _not_ a hard-refusal category) | Reframe skin/grooming around "rested, confident version of yourself," never "younger." Forbid the words `anti-aging`, `younger`, `reverse`, `erase`, `age spots`(-as-defect). Short neutral-aging note in the report. |
 
 Note the asymmetry: **AGING** is the lightest touch (tone reframing + an added banned-word set
 on an otherwise-standard report), while **ED** is the heaviest (structural section removal +
@@ -55,7 +55,7 @@ type ReportMode = 'STANDARD' | 'MODIFIED_ED' | 'MODIFIED_MEDICAL' | 'MODIFIED_AG
 `runReportGeneration(intake, observations, scores, notes, mode)` selects the prompt variant by
 `mode`. Each non-standard mode maps to an **approved prompt block in `/docs/Prompt_Chain.md`**
 (does not exist yet — owner/clinical deliverable). `src/chain/prompts.ts` gains the variant text
-*verbatim* once approved; the code never paraphrases (CLAUDE.md §2 rule 1).
+_verbatim_ once approved; the code never paraphrases (CLAUDE.md §2 rule 1).
 
 ### 3.2 Orchestrator: route the flag into the generation path instead of holding
 
@@ -83,11 +83,11 @@ A new delivered outcome shape carries the mode so fulfillment can pick the right
 
 [plan.ts](src/fulfillment/plan.ts) maps a delivered modified report to its actions:
 
-| Mode | deliverReport | email (NEW kinds) | manualReview | refund |
-|------|---------------|-------------------|--------------|--------|
-| ED | true | `report_delivery_ed` (warm + ED resources, §2.2 step 17) | **true** (§2.2 step 18) | false |
-| MEDICAL | true | `report_delivery` (+ derm-referral already in report body) | true | false |
-| AGING | true | `report_delivery` (standard delivery email) | optional | false |
+| Mode    | deliverReport | email (NEW kinds)                                          | manualReview            | refund |
+| ------- | ------------- | ---------------------------------------------------------- | ----------------------- | ------ |
+| ED      | true          | `report_delivery_ed` (warm + ED resources, §2.2 step 17)   | **true** (§2.2 step 18) | false  |
+| MEDICAL | true          | `report_delivery` (+ derm-referral already in report body) | true                    | false  |
+| AGING   | true          | `report_delivery` (standard delivery email)                | optional                | false  |
 
 ED requires a **distinct delivery email** (resources framed warmly) → new copy in
 `Landing_Copy.md` + a template + an `EmailPayload` kind. MEDICAL/AGING can reuse the existing
@@ -151,7 +151,7 @@ Each step is independently shippable behind its flag and leaves the others `held
 1. **AGING manual review** — Trust_Safety lists manual review for ED explicitly but not AGING.
    Queue AGING reports too, or deliver silently?
 2. **ED report without body metrics** — Call 3 scoring may include a body-composition dimension;
-   confirm it is *dropped from scoring*, not just hidden in Call 4, so priorities don't reference
+   confirm it is _dropped from scoring_, not just hidden in Call 4, so priorities don't reference
    an omitted dimension.
 3. **MEDICAL "basics" boundary** — what skin advice counts as "basic" (allowed) vs. "beyond
    basic" (derm referral only)? Needs a clinical line.
@@ -160,5 +160,5 @@ Each step is independently shippable behind its flag and leaves the others `held
 
 ---
 
-*Related: [FOLLOWUPS.md](FOLLOWUPS.md) M5. This design consumes — never invents — the prompts and
-copy those deliverables will provide.*
+_Related: [FOLLOWUPS.md](FOLLOWUPS.md) M5. This design consumes — never invents — the prompts and
+copy those deliverables will provide._

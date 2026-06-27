@@ -7,16 +7,22 @@ const SECRET = 'test-secret-do-not-use-in-production'
 function makeBlobStore(): BlobStore {
   const data = new Map<string, string>()
   return {
-    putText: vi.fn(async (key, text) => { data.set(key, text) }),
+    putText: vi.fn(async (key, text) => {
+      data.set(key, text)
+    }),
     getText: vi.fn(async (key) => data.get(key) ?? null),
-    delete: vi.fn(async (key) => { data.delete(key) }),
+    delete: vi.fn(async (key) => {
+      data.delete(key)
+    }),
   }
 }
 
 describe('createBlobFlaggedEmailStore', () => {
   let store: BlobStore
 
-  beforeEach(() => { store = makeBlobStore() })
+  beforeEach(() => {
+    store = makeBlobStore()
+  })
 
   it('flagEmail writes a key under flagged-emails/', async () => {
     const fes = createBlobFlaggedEmailStore(store, SECRET)

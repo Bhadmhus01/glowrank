@@ -18,7 +18,11 @@ export function createBlobFlaggedEmailStore(store: BlobStore, secret: string): F
   return {
     async flagEmail(email) {
       const key = `flagged-emails/${hash(email)}.json`
-      await store.putText(key, JSON.stringify({ flaggedAt: new Date().toISOString() }), 'application/json')
+      await store.putText(
+        key,
+        JSON.stringify({ flaggedAt: new Date().toISOString() }),
+        'application/json',
+      )
     },
 
     async isEmailFlagged(email) {

@@ -36,9 +36,7 @@ export async function createTextMessage(params: CreateTextMessageParams): Promis
     messages: [{ role: 'user', content: params.userContent }],
   })
 
-  return response.content
-    .map((block) => (block.type === 'text' ? block.text : ''))
-    .join('')
+  return response.content.map((block) => (block.type === 'text' ? block.text : '')).join('')
 }
 
 export interface VisionImageInput {
@@ -75,10 +73,10 @@ export async function createVisionMessage(params: CreateVisionMessageParams): Pr
     max_tokens: params.maxTokens,
     temperature: params.temperature ?? 0,
     system: params.system,
-    messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: params.userText }] }],
+    messages: [
+      { role: 'user', content: [...imageBlocks, { type: 'text', text: params.userText }] },
+    ],
   })
 
-  return response.content
-    .map((block) => (block.type === 'text' ? block.text : ''))
-    .join('')
+  return response.content.map((block) => (block.type === 'text' ? block.text : '')).join('')
 }

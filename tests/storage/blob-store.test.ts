@@ -1,11 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }))
+// function (not arrow) impls so the mocked classes are constructable under `new` in vitest 4.
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn(() => ({ send: sendMock })),
-  PutObjectCommand: vi.fn((input: unknown) => ({ kind: 'put', input })),
-  GetObjectCommand: vi.fn((input: unknown) => ({ kind: 'get', input })),
-  DeleteObjectCommand: vi.fn((input: unknown) => ({ kind: 'delete', input })),
+  S3Client: vi.fn(function () {
+    return { send: sendMock }
+  }),
+  PutObjectCommand: vi.fn(function (input: unknown) {
+    return { kind: 'put', input }
+  }),
+  GetObjectCommand: vi.fn(function (input: unknown) {
+    return { kind: 'get', input }
+  }),
+  DeleteObjectCommand: vi.fn(function (input: unknown) {
+    return { kind: 'delete', input }
+  }),
 }))
 
 import { createS3BlobStore } from '../../src/storage/blob-store'
@@ -22,7 +31,12 @@ describe('S3 blob store', () => {
     await blob.putText('orders/x.json', '{"a":1}', 'application/json')
     expect(sendMock.mock.calls[0][0]).toMatchObject({
       kind: 'put',
-      input: { Bucket: 'glow', Key: 'orders/x.json', Body: '{"a":1}', ContentType: 'application/json' },
+      input: {
+        Bucket: 'glow',
+        Key: 'orders/x.json',
+        Body: '{"a":1}',
+        ContentType: 'application/json',
+      },
     })
   })
 

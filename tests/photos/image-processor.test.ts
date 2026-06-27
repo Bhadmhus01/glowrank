@@ -17,7 +17,10 @@ describe('sharp image processor', () => {
   })
 
   it('strips EXIF metadata on the output', async () => {
-    const withExif = await solid().withExif({ IFD0: { Copyright: 'GlowRank test' } }).jpeg().toBuffer()
+    const withExif = await solid()
+      .withExif({ IFD0: { Copyright: 'GlowRank test' } })
+      .jpeg()
+      .toBuffer()
     expect((await sharp(withExif).metadata()).exif).toBeDefined() // sanity: input has EXIF
 
     const out = await processor.stripAndNormalize(new Uint8Array(withExif), 'image/jpeg')

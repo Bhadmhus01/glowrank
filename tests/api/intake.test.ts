@@ -9,7 +9,9 @@ const { mockStorePhoto, mockIsEmailFlagged, mockOrderStorePut } = vi.hoisted(() 
 
 vi.mock('../../src/storage/blob-store', () => ({ createS3BlobStoreFromEnv: vi.fn(() => ({})) }))
 vi.mock('../../src/photos/s3-storage', () => ({ createS3StorageClientFromEnv: vi.fn(() => ({})) }))
-vi.mock('../../src/photos/image-processor', () => ({ createSharpImageProcessor: vi.fn(() => ({})) }))
+vi.mock('../../src/photos/image-processor', () => ({
+  createSharpImageProcessor: vi.fn(() => ({})),
+}))
 vi.mock('../../src/photos/storage', () => ({ storePhoto: mockStorePhoto }))
 vi.mock('../../src/flagged-emails/store', () => ({
   createBlobFlaggedEmailStoreFromEnv: vi.fn(() => ({ isEmailFlagged: mockIsEmailFlagged })),
@@ -50,8 +52,14 @@ function makeReq(method = 'POST'): Record<string, unknown> {
 
 function makeRes() {
   const res = { status: vi.fn(), json: vi.fn(), _code: 0, _body: undefined as unknown }
-  res.status.mockImplementation((c: number) => { res._code = c; return res })
-  res.json.mockImplementation((b: unknown) => { res._body = b; return res })
+  res.status.mockImplementation((c: number) => {
+    res._code = c
+    return res
+  })
+  res.json.mockImplementation((b: unknown) => {
+    res._body = b
+    return res
+  })
   return res
 }
 
@@ -69,7 +77,10 @@ beforeEach(() => {
   mockStorePhoto.mockReset()
   mockIsEmailFlagged.mockReset()
   mockOrderStorePut.mockReset()
-  mockStorePhoto.mockResolvedValue({ key: 'photos/2026-05-28/abc.jpg', uploadedAt: new Date().toISOString() })
+  mockStorePhoto.mockResolvedValue({
+    key: 'photos/2026-05-28/abc.jpg',
+    uploadedAt: new Date().toISOString(),
+  })
   mockIsEmailFlagged.mockResolvedValue(false)
   mockOrderStorePut.mockResolvedValue(undefined)
 })

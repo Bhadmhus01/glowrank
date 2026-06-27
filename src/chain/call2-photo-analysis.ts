@@ -10,12 +10,7 @@ import { MODELS } from './models'
 import { CALL_2_SYSTEM_PROMPT, requirePrompt } from './prompts'
 
 export type PhotoCategory =
-  | 'face-front'
-  | 'face-side'
-  | 'full-body'
-  | 'wardrobe'
-  | 'dating-profile'
-  | 'makeup-look'
+  'face-front' | 'face-side' | 'full-body' | 'wardrobe' | 'dating-profile' | 'makeup-look'
 
 /** A photo ready for analysis: already EXIF-stripped and in a vision-safe format. */
 export interface AnalysisImage {
@@ -38,12 +33,17 @@ function buildUserText(intake: IntakeJson, images: AnalysisImage[]): string {
   if (intake.wardrobeVibe) lines.push(`- Wardrobe vibe: ${intake.wardrobeVibe}`)
   lines.push(`- Makeup opt-in: ${intake.makeupOptin}`)
   if (intake.makeupOptin) {
-    if (intake.skinUndertone) lines.push(`- Skin undertone (self-reported): ${intake.skinUndertone}`)
-    if (intake.currentMakeupLevel) lines.push(`- Current makeup level: ${intake.currentMakeupLevel}`)
+    if (intake.skinUndertone)
+      lines.push(`- Skin undertone (self-reported): ${intake.skinUndertone}`)
+    if (intake.currentMakeupLevel)
+      lines.push(`- Current makeup level: ${intake.currentMakeupLevel}`)
   }
   lines.push('', 'PHOTOS (in the order attached above):')
   images.forEach((img, i) => lines.push(`- [${i + 1}] ${img.category}`))
-  lines.push('', 'Analyze the attached photos and the intake. Return ONLY the JSON described in your instructions.')
+  lines.push(
+    '',
+    'Analyze the attached photos and the intake. Return ONLY the JSON described in your instructions.',
+  )
   return lines.join('\n')
 }
 
@@ -103,7 +103,7 @@ function parseObservations(
     parsed = JSON.parse(extractJsonObject(raw))
   } catch (err) {
     if (err instanceof Error && err.message.startsWith('CALL_2_PARSE_ERROR')) throw err
-    throw new Error('CALL_2_PARSE_ERROR: response was not valid JSON')
+    throw new Error('CALL_2_PARSE_ERROR: response was not valid JSON', { cause: err })
   }
   if (!isObject(parsed)) {
     throw new Error('CALL_2_VALIDATION_ERROR: response was not an object')
@@ -112,7 +112,9 @@ function parseObservations(
   // Deterministic safety guards: a section is kept ONLY when it's permitted, regardless
   // of what the model returned (CLAUDE.md §2 rule 4 / Trust_Safety §2.6, §4.6).
   const profile =
-    ctx.hasDatingScreenshots && isObject(parsed.profile) ? asDimension(parsed.profile, 'profile') : null
+    ctx.hasDatingScreenshots && isObject(parsed.profile)
+      ? asDimension(parsed.profile, 'profile')
+      : null
   const makeup = ctx.makeupOptin && isObject(parsed.makeup) ? asMakeup(parsed.makeup) : null
 
   return {

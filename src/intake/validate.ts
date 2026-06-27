@@ -68,7 +68,8 @@ export function validateIntake(data: unknown): IntakeJson {
   }
 
   // Optional fields
-  const wardrobeVibe = data.wardrobeVibe !== undefined ? requireString(data, 'wardrobeVibe') : undefined
+  const wardrobeVibe =
+    data.wardrobeVibe !== undefined ? requireString(data, 'wardrobeVibe') : undefined
   const skinUndertone =
     data.skinUndertone !== undefined
       ? requireEnum(data, 'skinUndertone', SKIN_UNDERTONES)

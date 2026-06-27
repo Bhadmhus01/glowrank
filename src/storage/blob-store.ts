@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3'
 
 // Small text-blob store over S3/R2 — used for order records and delivered reports. Separate
 // from the photo StorageClient (which deals in image bytes + a TTL sweep). Reuses the same
@@ -29,7 +34,12 @@ export function createS3BlobStore(config: BlobStoreConfig): BlobStore {
   return {
     async putText(key, text, contentType) {
       await client.send(
-        new PutObjectCommand({ Bucket: config.bucket, Key: key, Body: text, ContentType: contentType }),
+        new PutObjectCommand({
+          Bucket: config.bucket,
+          Key: key,
+          Body: text,
+          ContentType: contentType,
+        }),
       )
     },
     async getText(key) {
@@ -52,10 +62,13 @@ export function createS3BlobStoreFromEnv(): BlobStore {
   const accessKeyId = process.env.PHOTO_STORAGE_ACCESS_KEY_ID
   const secretAccessKey = process.env.PHOTO_STORAGE_SECRET_ACCESS_KEY
   if (bucket === undefined || accessKeyId === undefined || secretAccessKey === undefined) {
-    throw new Error('Storage not configured: set PHOTO_BUCKET, PHOTO_STORAGE_ACCESS_KEY_ID, PHOTO_STORAGE_SECRET_ACCESS_KEY')
+    throw new Error(
+      'Storage not configured: set PHOTO_BUCKET, PHOTO_STORAGE_ACCESS_KEY_ID, PHOTO_STORAGE_SECRET_ACCESS_KEY',
+    )
   }
   const config: BlobStoreConfig = { bucket, accessKeyId, secretAccessKey }
-  if (process.env.PHOTO_STORAGE_ENDPOINT !== undefined) config.endpoint = process.env.PHOTO_STORAGE_ENDPOINT
+  if (process.env.PHOTO_STORAGE_ENDPOINT !== undefined)
+    config.endpoint = process.env.PHOTO_STORAGE_ENDPOINT
   if (process.env.AWS_REGION !== undefined) config.region = process.env.AWS_REGION
   return createS3BlobStore(config)
 }

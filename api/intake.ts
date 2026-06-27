@@ -30,9 +30,10 @@ function isPhotoCategory(s: string): s is PhotoCategory {
   return (PHOTO_CATEGORIES as string[]).includes(s)
 }
 
-async function parseForm(
-  req: VercelRequest,
-): Promise<{ intakeRaw: string; photos: Array<{ category: PhotoCategory; filepath: string; mimetype: string }> }> {
+async function parseForm(req: VercelRequest): Promise<{
+  intakeRaw: string
+  photos: Array<{ category: PhotoCategory; filepath: string; mimetype: string }>
+}> {
   const form = formidable({ maxFileSize: MAX_PHOTO_BYTES, maxFiles: 12, keepExtensions: true })
   const [fields, files] = await form.parse(req)
 
@@ -104,7 +105,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // --- Photo count ---
   if (!validatePhotoCount(rawPhotos.length)) {
-    res.status(400).json({ error: 'INVALID_PHOTO_COUNT', detail: `got ${rawPhotos.length}, need 1–12` })
+    res
+      .status(400)
+      .json({ error: 'INVALID_PHOTO_COUNT', detail: `got ${rawPhotos.length}, need 1–12` })
     return
   }
 

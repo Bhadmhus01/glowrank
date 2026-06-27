@@ -40,14 +40,15 @@ function getClient(): PostHog {
  * no anything that reconstructs appearance (CLAUDE.md §9).
  * No-op if POSTHOG_API_KEY is not configured (safe in dev/test without env vars).
  */
-export function track(
-  event: FunnelEvent,
-  props?: Record<string, string | number | boolean>,
-): void {
+export function track(event: FunnelEvent, props?: Record<string, string | number | boolean>): void {
   if (!process.env.POSTHOG_API_KEY) return
   try {
     // Each server-side event gets a random distinctId — account-less product (CLAUDE.md §4).
-    getClient().capture({ distinctId: randomUUID(), event, ...(props !== undefined ? { properties: props } : {}) })
+    getClient().capture({
+      distinctId: randomUUID(),
+      event,
+      ...(props !== undefined ? { properties: props } : {}),
+    })
   } catch {
     // Never throw from analytics — a tracking failure must not block the delivery flow.
   }

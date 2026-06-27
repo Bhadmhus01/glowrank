@@ -1,0 +1,12 @@
+# Code ownership — every PR requests a review from the owner by default.
+# Replace @Bhadmhus01 with a team handle if/when one exists.
+
+*                       @Bhadmhus01
+
+# Safety-critical surfaces — always require owner review.
+/docs/                  @Bhadmhus01
+/src/chain/             @Bhadmhus01
+/src/safety/            @Bhadmhus01
+/src/photos/            @Bhadmhus01
+/src/payments/          @Bhadmhus01
+CLAUDE.md               @Bhadmhus01

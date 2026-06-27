@@ -28,7 +28,11 @@ describe('planFulfillment', () => {
   })
 
   it('under-18 refusal → refund + delete photos immediately', () => {
-    const outcome: GenerationOutcome = { status: 'refused', classification: 'FLAG_AGE', action: 'REFUSE_AGE' }
+    const outcome: GenerationOutcome = {
+      status: 'refused',
+      classification: 'FLAG_AGE',
+      action: 'REFUSE_AGE',
+    }
     expect(planFulfillment(outcome)).toMatchObject({
       refund: true,
       deletePhotosImmediately: true,
@@ -37,7 +41,11 @@ describe('planFulfillment', () => {
   })
 
   it('crisis refusal → refund + crisis resources + manual review', () => {
-    const outcome: GenerationOutcome = { status: 'refused', classification: 'FLAG_CRISIS', action: 'CRISIS_RESOURCES' }
+    const outcome: GenerationOutcome = {
+      status: 'refused',
+      classification: 'FLAG_CRISIS',
+      action: 'CRISIS_RESOURCES',
+    }
     expect(planFulfillment(outcome)).toMatchObject({
       refund: true,
       manualReview: true,
@@ -46,7 +54,11 @@ describe('planFulfillment', () => {
   })
 
   it('BDD refusal → refund + bdd resources + flag email to prevent re-purchase', () => {
-    const outcome: GenerationOutcome = { status: 'refused', classification: 'FLAG_BDD', action: 'BDD_RESOURCES' }
+    const outcome: GenerationOutcome = {
+      status: 'refused',
+      classification: 'FLAG_BDD',
+      action: 'BDD_RESOURCES',
+    }
     expect(planFulfillment(outcome)).toMatchObject({
       refund: true,
       flagEmailToPreventRepurchase: true,
@@ -55,12 +67,20 @@ describe('planFulfillment', () => {
   })
 
   it('wedding refusal → refund + waitlist email', () => {
-    const outcome: GenerationOutcome = { status: 'refused', classification: 'FLAG_WEDDING', action: 'WEDDING_WAITLIST' }
+    const outcome: GenerationOutcome = {
+      status: 'refused',
+      classification: 'FLAG_WEDDING',
+      action: 'WEDDING_WAITLIST',
+    }
     expect(planFulfillment(outcome)).toMatchObject({ refund: true, email: 'wedding_waitlist' })
   })
 
   it('held (ED/MEDICAL/AGING) → manual review, NOT refunded, NOT delivered', () => {
-    const outcome: GenerationOutcome = { status: 'held', classification: 'FLAG_ED', action: 'MODIFIED_ED' }
+    const outcome: GenerationOutcome = {
+      status: 'held',
+      classification: 'FLAG_ED',
+      action: 'MODIFIED_ED',
+    }
     expect(planFulfillment(outcome)).toMatchObject({
       manualReview: true,
       refund: false,

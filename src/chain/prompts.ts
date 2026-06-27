@@ -466,9 +466,7 @@ DECISION RULES:
 /** Throws if a prompt has not yet been pasted in from the doc. */
 export function requirePrompt(name: string, value: string): string {
   if (value.trim().length === 0) {
-    throw new Error(
-      `PROMPT_NOT_LOADED: ${name} must be pasted verbatim from docs/Prompt_Chain.md`,
-    )
+    throw new Error(`PROMPT_NOT_LOADED: ${name} must be pasted verbatim from docs/Prompt_Chain.md`)
   }
   return value
 }

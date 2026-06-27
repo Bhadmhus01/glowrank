@@ -44,7 +44,11 @@ export function createOrderStore(blob: BlobStore): OrderStore {
       const text = await blob.getText(keyFor(id))
       if (text === null) throw new Error(`ORDER_NOT_FOUND: ${id}`)
       const order = JSON.parse(text) as Order
-      await blob.putText(keyFor(id), JSON.stringify({ ...order, stripePaymentIntentId: paymentIntentId }), 'application/json')
+      await blob.putText(
+        keyFor(id),
+        JSON.stringify({ ...order, stripePaymentIntentId: paymentIntentId }),
+        'application/json',
+      )
     },
   }
 }
