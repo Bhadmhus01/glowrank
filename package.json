@@ -43,7 +43,7 @@
     "marked": "^18.0.4",
     "posthog-node": "^5.35.6",
     "resend": "^6.12.4",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "stripe": "^17.0.0"
   },
   "devDependencies": {
