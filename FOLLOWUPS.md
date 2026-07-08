@@ -9,6 +9,14 @@ this file is engineering tracking only.
 - `claude-sonnet-4-6` and `claude-opus-4-7` bare aliases confirmed valid.
 - `claude-haiku-4-5` bare alias not confirmed — updated to dated pin
   `claude-haiku-4-5-20251001` (the only known valid Haiku 4.5 ID).
+- **Live end-to-end run confirmed all 5 calls work** (harness delivered a PASS report:
+  tone 9/9/10/9, 2184 words). Two live-only issues surfaced and were fixed:
+  - **`temperature` deprecated on the Call 4 Opus model** — it now 400s if `temperature` is
+    sent. `src/chain/anthropic.ts` only sends `temperature` when provided; Call 4 omits it
+    (model-default sampling). Calls 1/2/3/5 still pass `temperature: 0` for determinism.
+  - **Long non-streaming Call 4 dropped the connection** — the wrapper now uses
+    `messages.stream().finalMessage()` so long generations keep the connection alive (also the
+    correct pattern for Vercel function/socket timeouts). Guarded by `tests/chain/anthropic.test.ts`.
 - **Status:** DONE.
 
 ## M2 — Opus-on-Call-4 vs the $1.20/report budget

@@ -22,19 +22,29 @@ export interface CreateTextMessageParams {
   system: string
   userContent: string
   maxTokens: number
-  /** Defaults to 0 — classification/scoring calls want determinism. */
+  /**
+   * Only sent when provided. Determinism-sensitive calls pass 0; leave it undefined for models
+   * that no longer accept `temperature` (some newer models reject the parameter entirely).
+   */
   temperature?: number
 }
 
-/** Single-turn text request; returns the concatenated text output. */
+/**
+ * Single-turn text request; returns the concatenated text output. Uses streaming so long
+ * generations (e.g. Call 4's full report) keep the HTTP connection alive with incremental
+ * deltas — a non-streaming request can exceed an intermediary/socket idle timeout and drop
+ * before the response completes. `finalMessage()` still resolves to the full accumulated text.
+ */
 export async function createTextMessage(params: CreateTextMessageParams): Promise<string> {
-  const response = await getClient().messages.create({
-    model: params.model,
-    max_tokens: params.maxTokens,
-    temperature: params.temperature ?? 0,
-    system: params.system,
-    messages: [{ role: 'user', content: params.userContent }],
-  })
+  const response = await getClient()
+    .messages.stream({
+      model: params.model,
+      max_tokens: params.maxTokens,
+      ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
+      system: params.system,
+      messages: [{ role: 'user', content: params.userContent }],
+    })
+    .finalMessage()
 
   return response.content.map((block) => (block.type === 'text' ? block.text : '')).join('')
 }
@@ -50,7 +60,7 @@ export interface CreateVisionMessageParams {
   userText: string
   images: VisionImageInput[]
   maxTokens: number
-  /** Defaults to 0. */
+  /** Only sent when provided (see CreateTextMessageParams.temperature). */
   temperature?: number
 }
 
@@ -68,15 +78,17 @@ export async function createVisionMessage(params: CreateVisionMessageParams): Pr
     },
   }))
 
-  const response = await getClient().messages.create({
-    model: params.model,
-    max_tokens: params.maxTokens,
-    temperature: params.temperature ?? 0,
-    system: params.system,
-    messages: [
-      { role: 'user', content: [...imageBlocks, { type: 'text', text: params.userText }] },
-    ],
-  })
+  const response = await getClient()
+    .messages.stream({
+      model: params.model,
+      max_tokens: params.maxTokens,
+      ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
+      system: params.system,
+      messages: [
+        { role: 'user', content: [...imageBlocks, { type: 'text', text: params.userText }] },
+      ],
+    })
+    .finalMessage()
 
   return response.content.map((block) => (block.type === 'text' ? block.text : '')).join('')
 }
