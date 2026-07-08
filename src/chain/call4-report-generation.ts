@@ -71,7 +71,8 @@ export async function runReportGeneration(
     system: requirePrompt('CALL_4_SYSTEM_PROMPT', CALL_4_SYSTEM_PROMPT),
     userContent: buildUserText(intake, observations, scores, regenerationNotes),
     maxTokens: 5000,
-    temperature: 0.7,
+    // temperature intentionally omitted — MODELS.call4ReportGeneration (Opus) deprecated the
+    // `temperature` parameter and returns 400 if it is sent. Model default sampling applies.
   })
   return report.trim()
 }

@@ -29,3 +29,8 @@ All notable changes to this project are documented here. The format is based on
 
 - TypeScript errors under `exactOptionalPropertyTypes`.
 - Parse-error rethrows in the AI chain now preserve the original error via `cause`.
+- Call 4 (Opus) `temperature` deprecation: the Anthropic wrapper now omits `temperature` when
+  unset and Call 4 no longer sends it (the model 400s on the parameter).
+- Long report generation dropped the connection: the wrapper now streams
+  (`messages.stream().finalMessage()`) to keep long requests alive. Found by a live end-to-end
+  run of the report harness; guarded by a new `tests/chain/anthropic.test.ts`.
