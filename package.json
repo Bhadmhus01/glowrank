@@ -42,7 +42,7 @@
     "formidable": "^3.5.4",
     "marked": "^18.0.4",
     "posthog-node": "^5.35.6",
-    "resend": "^6.12.4",
+    "resend": "^6.17.1",
     "sharp": "^0.34.5",
     "stripe": "^17.0.0"
   },
